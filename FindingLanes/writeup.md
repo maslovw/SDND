@@ -16,8 +16,8 @@ Next step would be Canny edge detection with cv2.dilate method, that makes lines
 more solid.
 
 At the end I apply cv2.HoughLinesP, which can still have a lot of noise, 
-so I added lines `filtering`: for each line in the output of HoughLines 
-I find k and b values (y = kx + b), where k is the line slope and b is 
+so I added lines 'filtering': for each line in the output of HoughLines 
+I find k and b values `y = kx + b`, where k is the line slope and b is 
 the vertical intercept of the given line. This allows me to calculate 
 top and bottom points of the line. 
 
@@ -26,7 +26,11 @@ slop: right lines have k>0, left lines have k<0. All the lines with the
 abs(slop) < 0.3 would be ignored as too close to horizontal line.
 
 Finally I reject outliners in both arrays (left and right lines) using this
-method: `data[abs(data - data.mean()) < m * data.std()]`, by k parameter and 
+method: 
+
+`data[abs(data - data.mean()) < m * data.std()]`,
+
+by k parameter and 
 then by x_bottom. Then I calculate the mean line of all, finding the middle.
 
 This line should represent the lane.
@@ -36,10 +40,13 @@ use.
 
 Here's are some examples:
 
-![challenge01.jpg][test_images_output/challenge01.jpg]
-![challenge03.jpg][test_images_output/challenge03.jpg]
-![solidWhiteCurve.jpg][test_images_output/solidWhiteCurve.jpg]
-![solidYellowCurve.jpg][test_images_output/solidYellowCurve.jpg]
+![challenge01.jpg](https://github.com/maslovw/SDND/raw/master/FindingLanes/test_images_output/challenge01.jpg)
+
+![challenge03.jpg](https://github.com/maslovw/SDND/raw/master/FindingLanes/test_images_output/challenge03.jpg)
+
+![solidWhiteCurve.jpg](https://github.com/maslovw/SDND/raw/master/FindingLanes/test_images_output/solidWhiteCurve.jpg)
+
+![solidYellowCurve.jpg](https://github.com/maslovw/SDND/raw/master/FindingLanes/test_images_output/solidYellowCurve.jpg)
 
 
 ### 2. Potential shortcomings with my current pipeline
@@ -62,8 +69,8 @@ algorithm will survive that.
 
 
 
-![challenge02.jpg][test_images_output/challenge02.jpg]
-![challenge04.jpg][test_images_output/challenge04.jpg]
+![challenge02.jpg](https://github.com/maslovw/SDND/raw/master/FindingLanes/test_images_output/challenge02.jpg)
+![challenge04.jpg](https://github.com/maslovw/SDND/raw/master/FindingLanes/test_images_output/challenge04.jpg)
 
 ### 3. Possible improvements to my pipeline
 
