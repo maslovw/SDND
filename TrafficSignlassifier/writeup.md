@@ -1,52 +1,65 @@
-** Traffic Sign Recognition Project**
-
-The goals / steps of this project:
-* Load the data set (see below for links to the project data set)
-* Explore, summarize and visualize the data set
-* Design, train and test a model architecture
-* Use the model to make predictions on new images
-* Analyze the softmax probabilities of the new images
-* Summarize the results with a written report
-
-
-[//]: # (Image References)
-
-[image1]: ./gmaps/sign_1.png "Traffic Sign 1"
-[image2]: ./gmaps/sign_2.png "Traffic Sign 2"
-[image3]: ./gmaps/sign_3.png "Traffic Sign 3"
-[image4]: ./gmaps/sign_4.png "Traffic Sign 4"
-[image5]: ./gmaps/sign_5.png "Traffic Sign 5"
-
-## Rubric Points
-###Here I will consider the [rubric points](https://review.udacity.com/#!/rubrics/481/view) individually and describe how I addressed each point in my implementation.  
-
 ---
-###Writeup / README
+### Writeup / README
 
-####1. Provide a Writeup / README that includes all the rubric points and how you addressed each one. You can submit your writeup as markdown or pdf. You can use this template as a guide for writing the report. The submission includes the project code.
-
-You're reading it! and here is a link to my [project code](https://github.com/udacity/CarND-Traffic-Sign-Classifier-Project/blob/master/Traffic_Sign_Classifier.ipynb)
+Here is a link to my [project code](https://github.com/maslovw/SDND/blob/master/TrafficSignlassifier/Traffic_Sign_Classifier.ipynb)
 
 ###Data Set Summary & Exploration
+#### Training set visualisation
+![visual](c:\Users\viacheslav.maslov\study\udacity\SDND\TrafficSignlassifier\misc\training_set_visualisation.png)
 
-####1. Provide a basic summary of the data set. In the code, the analysis should be done using python, numpy and/or pandas methods rather than hardcoding results manually.
+#### Basic summary
 
-I used the pandas library to calculate summary statistics of the traffic
-signs data set:
+* The size of training set is 34799
+* The size of the validation set is 4410
+* The size of test set is 12630
+* The shape of a traffic sign image is 32x32x3
+* The number of unique classes/labels in the data set is 42
 
-* The size of training set is ?
-* The size of the validation set is ?
-* The size of test set is ?
-* The shape of a traffic sign image is ?
-* The number of unique classes/labels in the data set is ?
+#### Distribution of the data
 
-####2. Include an exploratory visualization of the dataset.
+The amount of some labels is much higher than amount of other labels
+Here is an exploratory visualization of the data set. It is a bar chart showing how the training set distributed
+![training_set](c:\Users\viacheslav.maslov\study\udacity\SDND\TrafficSignlassifier\misc\training_set_distribution.png)
+The minimum is 'Go straight or left' sign: 180 times(0.52%)
+The maximum got the 'Speed limit (50km/h)' sign with 2010 different pictures, which is 5.78%
 
-Here is an exploratory visualization of the data set. It is a bar chart showing how the data ...
+### Design and Test a Model Architecture
+### 1. Multi-column Deep CNN
+Before I started the project, I decided to check out what's already done for this data set.
+And I liked the approach of [Multi-column DNN](https://arxiv.org/abs/1202.2745), which I decided to try.
+Here's the architecture of my multi-column DNN
+![DNN](c:\Users\viacheslav.maslov\study\udacity\SDND\TrafficSignlassifier\misc\DNNstructure.png)
 
-![alt text][image1]
+#### Image preprocessing
+As described in the paper, each of parallen deep CNNs take preprocessed picture:
+![image_preprocessing](c:\Users\viacheslav.maslov\study\udacity\SDND\TrafficSignlassifier\misc\img_preproc.png)
+1 source image
+2 [imadjust](https://stackoverflow.com/questions/31647274/is-there-any-function-equivalent-to-matlabs-imadjust-in-opencv-with-c/31650693#31650693)
+3 [equilizedHist on HSV](http://opencv-srf.blogspot.de/2013/08/histogram-equalization.html)
+4 [adaptHisteq](https://de.mathworks.com/help/images/ref/adapthisteq.html)
 
-###Design and Test a Model Architecture
+#### Results
+The result was impressive, as I didn't try any other model.
+[Here's the link to see how it worked](http://htmlpreview.github.io/?https://github.com/maslovw/SDND/blob/master/TrafficSignlassifier/MCDNN/WithoutSourceImg.html)
+On my laptop training the model with validating it took ~28sec/epoch with 3 DNNs (and 36sec with 4 DNNs)
+The best result was: `loss: 0.0061 - acc: 0.9984 - val_loss: 0.0883 - val_acc: 0.9798`
+
+### LeNet
+
+After being all excited about this architecture with parrallel CNNs, I decided to try another architecture, which was recomended.
+
+#### Image preprocessing
+
+Only pixel normalization by the Lamda layer
+`Lambda(lambda x: x/127.5 - 1.)(input_img)`
+
+### Result
+
+### LeNet on augmented data
+I liked the result, it was not worse then my previous approach, but the training took almost 3 times less time per one epoch, which is good for the performans.
+
+So at the end I wanted to play with Keras generator, and I generated pictures from the training set.
+At the end I got 86000 pictures of signs including source training data
 
 ####1. Describe how you preprocessed the image data. What techniques were chosen and why did you choose these techniques? Consider including images showing the output of each preprocessing technique. Pre-processing refers to techniques such as converting to grayscale, normalization, etc. (OPTIONAL: As described in the "Stand Out Suggestions" part of the rubric, if you generated additional data for training, describe why you decided to generate additional data, how you generated the data, and provide example images of the additional data. Then describe the characteristics of the augmented training set like number of images in the set, number of images for each class, etc.)
 
