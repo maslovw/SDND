@@ -3,9 +3,10 @@
 
 Here is a link to my [project code](https://github.com/maslovw/SDND/blob/master/TrafficSignlassifier/Traffic_Sign_Classifier.ipynb)
 
-###Data Set Summary & Exploration
+### Data Set Summary & Exploration
 #### Training set visualisation
-![visual](c:\Users\viacheslav.maslov\study\udacity\SDND\TrafficSignlassifier\misc\training_set_visualisation.png)
+![visual](https://github.com/maslovw/SDND/blob/master/TrafficSignlassifier/misc/training_set_visualisation.png)
+
 
 #### Basic summary
 
@@ -19,7 +20,7 @@ Here is a link to my [project code](https://github.com/maslovw/SDND/blob/master/
 
 The amount of some labels is much higher than amount of other labels
 Here is an exploratory visualization of the data set. It is a bar chart showing how the training set distributed
-![training_set](c:\Users\viacheslav.maslov\study\udacity\SDND\TrafficSignlassifier\misc\training_set_distribution.png)
+![training_set](https://github.com/maslovw/SDND/blob/master/TrafficSignlassifier/misc/training_set_distribution.png)
 The minimum is 'Go straight or left' sign: 180 times(0.52%)
 The maximum got the 'Speed limit (50km/h)' sign with 2010 different pictures, which is 5.78%
 
@@ -28,21 +29,22 @@ The maximum got the 'Speed limit (50km/h)' sign with 2010 different pictures, wh
 Before I started the project, I decided to check out what's already done for this data set.
 And I liked the approach of [Multi-column DNN](https://arxiv.org/abs/1202.2745), which I decided to try.
 Here's the architecture of my multi-column DNN
-![DNN](c:\Users\viacheslav.maslov\study\udacity\SDND\TrafficSignlassifier\misc\DNNstructure.png)
+![DNN](https://github.com/maslovw/SDND/blob/master/TrafficSignlassifier/misc/DNNstructure.png)
 
 #### Image preprocessing
 As described in the paper, each of parallen deep CNNs take preprocessed picture:
-![image_preprocessing](c:\Users\viacheslav.maslov\study\udacity\SDND\TrafficSignlassifier\misc\img_preproc.png)
-1 source image
-2 [imadjust](https://stackoverflow.com/questions/31647274/is-there-any-function-equivalent-to-matlabs-imadjust-in-opencv-with-c/31650693#31650693)
-3 [equilizedHist on HSV](http://opencv-srf.blogspot.de/2013/08/histogram-equalization.html)
-4 [adaptHisteq](https://de.mathworks.com/help/images/ref/adapthisteq.html)
+![image_preprocessing](https://github.com/maslovw/SDND/blob/master/TrafficSignlassifier/misc/img_preproc.png)
+1. source image
+2. [imadjust](https://stackoverflow.com/questions/31647274/is-there-any-function-equivalent-to-matlabs-imadjust-in-opencv-with-c/31650693#31650693)
+3. [equilizedHist on HSV](http://opencv-srf.blogspot.de/2013/08/histogram-equalization.html)
+4. [adaptHisteq](https://de.mathworks.com/help/images/ref/adapthisteq.html)
 
 #### Results
 The result was impressive, as I didn't try any other model.
 [Here's the link to see how it worked](http://htmlpreview.github.io/?https://github.com/maslovw/SDND/blob/master/TrafficSignlassifier/MCDNN/WithoutSourceImg.html)
-On my laptop training the model with validating it took ~28sec/epoch with 3 DNNs (and 36sec with 4 DNNs)
-The best result was: `loss: 0.0061 - acc: 0.9984 - val_loss: 0.0883 - val_acc: 0.9798`
+On my laptop training the model with validating it took ~28sec/epoch with 3 DNNs (and 36sec with 4 DNNs, batch_size=128)
+The best result was:
+`loss: 0.0061 - acc: 0.9984 - val_loss: 0.0883 - val_acc: 0.9798`
 
 ### LeNet
 
@@ -54,6 +56,11 @@ Only pixel normalization by the Lamda layer
 `Lambda(lambda x: x/127.5 - 1.)(input_img)`
 
 ### Result
+[Here's the link to see how it worked](https://github.com/maslovw/SDND/blob/master/TrafficSignlassifier/LeNet/Traffic_Sign_Classifier.ipynb)
+
+On my laptop training the model took ~10s/epoch (batch_size=128)
+The best result was: 
+`loss: 0.0016 - acc: 0.9997 - val_loss: 0.2297 - val_acc: 0.9617`
 
 ### LeNet on augmented data
 I liked the result, it was not worse then my previous approach, but the training took almost 3 times less time per one epoch, which is good for the performans.
