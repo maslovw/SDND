@@ -27,8 +27,8 @@ Here is an exploratory visualization of the data set. It is a bar chart showing 
 The minimum is 'Go straight or left' sign: 180 times(0.52%)
 The maximum got the 'Speed limit (50km/h)' sign with 2010 different pictures, which is 5.78%
 
-### Design and Test a Model Architecture
-### 1. Multi-column Deep CNN
+## Design and Test a Model Architecture
+## 1. Multi-column Deep CNN
 Before I started the project, I decided to check out what's already done for this data set.
 And I liked the approach of [Multi-column DNN](https://arxiv.org/abs/1202.2745), which I decided to try.
 Here's the architecture of my multi-column DNN
@@ -53,7 +53,7 @@ The best result was:
 
 `loss: 0.0061 - acc: 0.9984 - val_loss: 0.0883 - val_acc: 0.9798`
 
-### LeNet
+## LeNet
 
 After being all excited about this architecture with parrallel CNNs, I decided to try another architecture, which was recomended.
 
@@ -70,7 +70,7 @@ The best result was:
 
 `loss: 0.0016 - acc: 0.9997 - val_loss: 0.2297 - val_acc: 0.9617`
 
-### LeNet on augmented data
+## LeNet on augmented data
 I liked the result, it was not that much worse then my previous approach, but the training took almost 3 times less time per one epoch, which is good for the performans.
 
 So at the end I wanted to play with Keras generator, and I generated pictures from the training set.
@@ -92,7 +92,10 @@ New signs distribution looks like this:
 New distribution graph
 
 ![visual](https://raw.githubusercontent.com/maslovw/SDND/master/TrafficSignlassifier/misc/aug_training_set_distribution.png)
+
 #### Result
+[Link to the notebook](https://github.com/maslovw/SDND/blob/master/TrafficSignlassifier/LeNet/Traffic_Sign_Classifier.ipynb)
+
 `loss: 0.0149 - acc: 0.9953 - val_loss: 0.0571 - val_acc: 0.9848`
 
 On the test data `loss: 0.07699867185758226, acc: 0.97846397466349966`
