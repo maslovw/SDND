@@ -12,3 +12,15 @@ Naturally, one of the first things we would like to do in developing a
 self-driving car is to automatically detect lane lines using an algorithm.
 
 In this project we will detect lane lines in images using Python3 and [OpenCV](http://opencv.org/).
+
+## Project **Traffic Sign Recognition**
+https://github.com/maslovw/SDND/tree/master/TrafficSignlassifier
+<img src = "https://github.com/maslovw/SDND/blob/master/TrafficSignlassifier/misc/training_set_visualisation.png" alt="training set" />
+### Overview
+The goal of the project is to create a classificator for the German traffic sign data set.
+
+In this project I tryed different classification models using Keras:
+* LeNet
+* LeNet on augmented data
+* Inception
+* Multi-column DNN
