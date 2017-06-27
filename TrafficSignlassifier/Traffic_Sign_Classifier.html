@@ -14621,7 +14621,7 @@ FyJRJH4hEkXiFyJRJH4hEuX/Ae1ZFedHaq7ZAAAAAElFTkSuQmCC
     
     <span class="n">drop</span> <span class="o">=</span> <span class="n">Dropout</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)(</span><span class="n">conv3</span><span class="p">)</span>
     
-    <span class="n">pool</span> <span class="o">=</span> <span class="n">MaxPooling2D</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">))(</span><span class="n">conv3_act</span><span class="p">)</span>
+    <span class="n">pool</span> <span class="o">=</span> <span class="n">MaxPooling2D</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">))(</span><span class="n">drop</span><span class="p">)</span>
     <span class="c1"># 16x16x32</span>
     <span class="n">conv3</span> <span class="o">=</span> <span class="n">Conv2D</span><span class="p">(</span><span class="mi">64</span><span class="p">,</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">),</span> <span class="n">padding</span><span class="o">=</span><span class="s1">&#39;valid&#39;</span><span class="p">,</span> <span class="n">kernel_initializer</span><span class="o">=</span><span class="n">winit</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s1">&#39;relu&#39;</span><span class="p">)(</span><span class="n">pool</span><span class="p">)</span>
     
