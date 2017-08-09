@@ -13,14 +13,24 @@ from flask import Flask
 from io import BytesIO
 
 from keras.models import load_model
+from scipy.misc import imresize
 import h5py
 from keras import __version__ as keras_version
+from flask import request
+import sys
+
+import cv2
+def shutdown_server():
+    func = request.environ.get('werkzeug.server.shutdown')
+    if func is None:
+        raise RuntimeError('Not running with the Werkzeug Server')
+    func()
 
 sio = socketio.Server()
 app = Flask(__name__)
 model = None
 prev_image_array = None
-
+img_folder = ''
 
 class SimplePIController:
     def __init__(self, Kp, Ki):
@@ -39,12 +49,14 @@ class SimplePIController:
 
         # integral error
         self.integral += self.error
+        if measurement > 24:
+            self.integral = 0.
 
         return self.Kp * self.error + self.Ki * self.integral
 
 
 controller = SimplePIController(0.1, 0.002)
-set_speed = 9
+set_speed = 19
 controller.set_desired(set_speed)
 
 
@@ -61,6 +73,9 @@ def telemetry(sid, data):
         imgString = data["image"]
         image = Image.open(BytesIO(base64.b64decode(imgString)))
         image_array = np.asarray(image)
+        #image_array = imresize(image_array, (80, 160))
+        image_array = cv2.cvtColor(image_array, cv2.COLOR_RGB2GRAY)
+        image_array = image_array.reshape(160, 320, 1)
         steering_angle = float(model.predict(image_array[None, :, :, :], batch_size=1))
 
         throttle = controller.update(float(speed))
@@ -69,19 +84,25 @@ def telemetry(sid, data):
         send_control(steering_angle, throttle)
 
         # save frame
-        if args.image_folder != '':
+        global args
+        if img_folder != '':
             timestamp = datetime.utcnow().strftime('%Y_%m_%d_%H_%M_%S_%f')[:-3]
-            image_filename = os.path.join(args.image_folder, timestamp)
+            image_filename = os.path.join(img_folder, timestamp)
             image.save('{}.jpg'.format(image_filename))
     else:
         # NOTE: DON'T EDIT THIS.
         sio.emit('manual', data={}, skip_sid=True)
 
-
 @sio.on('connect')
 def connect(sid, environ):
     print("connect ", sid)
     send_control(0, 0)
+
+@sio.on('disconnect')
+def disconnect(sid):
+    print('disconnect ', sid)
+    controller.integral = 0
+    #sys.exit()
 
 
 def send_control(steering_angle, throttle):
@@ -93,6 +114,38 @@ def send_control(steering_angle, throttle):
         },
         skip_sid=True)
 
+def start(args):
+
+    # check that model Keras version is same as local Keras version
+    f = h5py.File(args.model, mode='r')
+    model_version = f.attrs.get('keras_version')
+    ker_ver = str(keras_version).encode('utf8')
+
+    if model_version != ker_ver:
+        print('You are using Keras version ', keras_version,
+              ', but the model was built using ', model_version)
+    global model
+    model = load_model(args.model)
+
+    if args.image_folder != '':
+        print("Creating image folder at {}".format(args.image_folder))
+        if not os.path.exists(args.image_folder):
+            os.makedirs(args.image_folder)
+        else:
+            shutil.rmtree(args.image_folder)
+            os.makedirs(args.image_folder)
+        global img_folder
+        img_folder = args.image_folder
+        print("RECORDING THIS RUN ...")
+    else:
+        print("NOT RECORDING THIS RUN ...")
+
+    # wrap Flask application with engineio's middleware
+    global app
+    app = socketio.Middleware(sio, app)
+
+    # deploy as an eventlet WSGI server
+    eventlet.wsgi.server(eventlet.listen(('', 4567)), app)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Remote Driving')
@@ -110,30 +163,5 @@ if __name__ == '__main__':
     )
     args = parser.parse_args()
 
-    # check that model Keras version is same as local Keras version
-    f = h5py.File(args.model, mode='r')
-    model_version = f.attrs.get('keras_version')
-    keras_version = str(keras_version).encode('utf8')
+    start(args)
 
-    if model_version != keras_version:
-        print('You are using Keras version ', keras_version,
-              ', but the model was built using ', model_version)
-
-    model = load_model(args.model)
-
-    if args.image_folder != '':
-        print("Creating image folder at {}".format(args.image_folder))
-        if not os.path.exists(args.image_folder):
-            os.makedirs(args.image_folder)
-        else:
-            shutil.rmtree(args.image_folder)
-            os.makedirs(args.image_folder)
-        print("RECORDING THIS RUN ...")
-    else:
-        print("NOT RECORDING THIS RUN ...")
-
-    # wrap Flask application with engineio's middleware
-    app = socketio.Middleware(sio, app)
-
-    # deploy as an eventlet WSGI server
-    eventlet.wsgi.server(eventlet.listen(('', 4567)), app)
