@@ -312,7 +312,7 @@ class Line():
 
     def _check_and_measure_curvative(self, fit, x, y):
         curve = self._measure_curvative(fit, x, y)
-        if abs(curve[0] - self.curve[0]) < self.curve_margin:
+        if abs(curve[0] - self.curve[0])/self.curve[0] < 0.5:
             self.curve = curve
             return True
         return False
@@ -458,9 +458,10 @@ class LinesSearch():
 if __name__ == '__main__':
     ls = LinesSearch(ImageSobelHlsBinarizer())
 
-    # vid = cv2.VideoCapture('project_video.mp4')
-    vid = cv2.VideoCapture('challenge_video.mp4')
+    vid = cv2.VideoCapture('project_video.mp4')
+    i = 0
     while vid.isOpened():
+        i += 1
         ret, camera_img = vid.read()
         if ret is None:
             break
@@ -471,6 +472,7 @@ if __name__ == '__main__':
         # continue
         result = ls.plot()
         cv2.imshow('all_result', result)
+        cv2.imwrite('output_images/img'+str(i)+'.jpg', result)
         stop = False
         # while True:
         if 1:

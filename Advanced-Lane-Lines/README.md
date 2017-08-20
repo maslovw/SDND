@@ -80,34 +80,77 @@ Here's an example of my output for this step.  (note: this is not actually from 
 
 #### 3. Lines detection
 
-The first step in this method is to compute the base points of the lanes. This is done in the histogram_base_points function in lines 370 - 376 of p2.py or in the . The first step is to compute a histogram of the lower half of the thresholded image. The histogram corresponding to the thresholded, warped image in the previous section is shown below:
+The first step in this method is to compute the base points of the lanes. This is done in the histogram_base_points function in lines 370 - 376 of p2.py or in the AdvanceLaneFinding section 4.5. The first step is to compute a histogram of the lower half of the thresholded image. The histogram corresponding to the thresholded, warped image in the previous section is shown below:
 
 ![threshold image](./examples/historgram.png)
 
+Second step is to find all the pixels, that belongs to the left and right lines separately (AdvanceLaneFinding Section 5). I used simple Sliding windows as described in the lesson
+
+![threshold image](./examples/sliding_windows.png)
+
+The algorithm splits the image into a number of horizontal bands (10). Starting at the lowest band, a window of a fixed width (240 pixels) centered at both base points is considered. The x and y coordinates of all the nonzero pixels in these windows are compiled into into separate lists. The base point for the next band is assumed to be the column with the maximum number of pixels in the current band. After all the points are accumulated, the function reject_outliers is used to remove any points whose x or y coordinates are outside of two standard deviations from the mean value. This helps remove irrelevant pixels from the data.
+
+The filtered pixels, along with a weighted average of prior lane pixels are used with np.polyfit to compute a second order polynomial that fits the points.
+
+The polynomial is then used to create an image mask that describes a region of interest which is then used by the masking method in upcoming frames.
+
+The sanity check is defined in the method Line._check_and_measure_curvative() in p2.py: lines 313-318 . It is called by the Line._find. The stored value of the radius of curvature of the lane is used to see if the current radius of curvature has deviated by more than 50%.
+
+#### 5. Radius of curvature and vehicle position
+
+The radius of curvature is computed in the `Line._measure_curvative` method in lines 299-311. The pixel values of the lane are scaled into meters using the scaling factors defined as follows:
+```python
+ym_per_pix = 30/720 # meters per pixel in y dimension
+xm_per_pix = 3.7/700 # meteres per pixel in x dimension
+```
+
+These values are then used to compute the polynomial coefficients in meters and then the formula given in the lectures is used to compute the radius of curvature.
+
+I approximated the coefficient, and got it equal to 0.327
 
 
-#### 5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
+The position of the vehicle is computed by the code in lines 439-444. The camera is assumed to be centered in the vehicle and checks how far the midpoint of the two lanes is from the center of the image.
 
-I did this in lines # through # in my code in `my_other_file.py`
 
-#### 6. Provide an example image of your result plotted back down onto the road such that the lane area is identified clearly.
+```python
 
-I implemented this step in lines # through # in my code in `yet_another_file.py` in the function `map_lane()`.  Here is an example of my result on a test image:
+left_bx = np.average(left_fitx[-10:])
+right_bx = np.average(right_fitx[-10:])
+lane_mid = (right_bx - left_bx) / 2 + left_bx
+veh_pos = image.shape[1]/2
+dx = (veh_pos - middle)*xm_per_pix
+```
 
-![alt text][image6]
+
+#### 6. Result.
+
+The pipeline itself:
+```python
+import p2
+def process_image(image):
+    ls = p2.LinesSearch(p2.ImageSobelHlsBinarizer())
+
+    ls.search(image)
+    ret = ls.plot()
+    return ret
+```
+`ls.search` process each image and updates the values of left and right Line classes.
+
+`ls.plot` draws the lane on picture, plus adds some additional 'debugging' data, like birds-eye view, thesholded image, curvatives of left and right lines, car's offset from a lane center and lane width
+
+![output_images][./output_images/img4.jpg]
+![output_images][./output_images/img613.jpg]
+![output_images][./output_images/img637.jpg]
 
 ---
 
 ### Pipeline (video)
 
-#### 1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (wobbly lines are ok but no catastrophic failures that would cause the car to drive off the road!).
-
-Here's a [link to my video result](./project_video.mp4)
+[![Pipeline video](./output_images/img4.jpg)](https://youtu.be/cqj7gO7inGw)
 
 ---
 
 ### Discussion
 
-#### 1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
-
-Here I'll talk about the approach I took, what techniques I used, what worked and why, where the pipeline might fail and how I might improve it if I were going to pursue this project further.  
+Getting the pipeline to be robust against shadows and at the same time capable of detecting yellow lane lines on white ground was the greates difficulty. I took the approach that lines should never have very low saturation values, i.e. be black. Setting a minimal value for the saturation helped when paired with the x gradient and absolute gradient threshold. Problematic is also the case when more than two lanes get detected. For lines detected far away a threshold on the distance eliminated the problem. At the moment the pipeline will likely fail as soon as more (spurious) lines are on the same lane, as e.g. in the first challenge video. This could be solved by building separate lane line detectors for yellow and white together with additional logic which line to choose.
+Or maybe better and faster would be to use the described methods to get the input data for the CNN to be trained (as output would be an array, illuminating the lane)
