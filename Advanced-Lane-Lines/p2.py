@@ -50,9 +50,9 @@ class BirdEyeTransform():
             [  0.00000000e+00,   1.15282217e+03,   3.86124583e+02],
             [  0.00000000e+00,   0.00000000e+00,   1.00000000e+00]])
         self.camera_M = np.array([
-            [ -3.38244137e-01,  -1.53412508e+00,   8.61613049e+02],
-            [  1.44328993e-15,  -1.76337943e+00,   7.75886951e+02],
-            [  5.96311195e-18,  -2.37522550e-03,   1.00000000e+00]])
+            [-4.09514513e-01, -1.54251784e+00, 9.09522880e+02],
+            [-3.55271368e-15, -1.95774942e+00, 8.94691487e+02],
+            [-3.57786717e-18, -2.38211439e-03, 1.00000000e+00]])
 
     def undistort(self, img):
         return cv2.undistort(img, self.mtx, self.dist, None, self.mtx)
@@ -194,6 +194,10 @@ class ImageSobelHlsBinarizer():
         binary = region_of_interest(binary)
         return binary
 
+
+    def transform(self, frame):
+        return self.birdEyeTransform.transform(frame)
+
     def undistort(self, frame):
         return self.birdEyeTransform.undistort(frame)
 
@@ -215,6 +219,7 @@ class Line():
         self.current_fit = []
         # radius of curvature of the line in some units
         self.curve = None
+        self.curven = 0
         # distance in meters of vehicle center from the line
         self.line_base_pos = None
         # difference in fit coefficients between last and new fits
@@ -229,12 +234,10 @@ class Line():
         self.minpix = 50
         self.nwindows = 9
         self.ploty = None
-        self.curve_margin = 300
+        self.curve_margin = 1300
         # Define conversions in x and y from pixels space to meters
-        self.ym_per_pix = 30 / 720  # meters per pixel in y dimension
-        self.xm_per_pix = 3.7 / 700  # meters per pixel in x dimension
         self.lane_name = LaneName
-        self.n = 5
+        self.n = 15
 
 
     def _process_window(self, win_y_low, win_y_high, nonzero):
@@ -268,6 +271,8 @@ class Line():
         y = nonzeroy[lane_inds]
         self.fit = np.polyfit(y, x, 2)
         self.curve = self._measure_curvative(self.fit, x, y)
+        self.allx = x
+        self.ally = y
         return (self.fit, True)
 
     def _find_new(self, frame_bin):
@@ -286,29 +291,30 @@ class Line():
         fit = np.polyfit(y, x, 2)
         is_curv = self._check_and_measure_curvative(fit, x, y)
         if is_curv:
+            self.allx = x
+            self.ally = y
             return (fit, True)
-        print("curve doesn't fit...")
         return (self.fit, False)
 
-    def _measure_curvative(self, fit, x, y):
+    def _measure_curvative(self, fit, x=None, y=None):
         y_eval = np.max(self.ploty)
         curverad = ((1 + (2 * fit[0] * y_eval + fit[1]) ** 2) ** 1.5) / np.absolute(2 * fit[0])
 
+        # got the coefficient by checking the value curverad_meters/curverad
+        curverad_meters = curverad * 0.327
         # Fit new polynomials to x,y in world space
-        fit_cr = np.polyfit(y * self.ym_per_pix, x * self.xm_per_pix, 2)
-        # Calculate the new radii of curvature
-        curverad_meters = ((1 + (2 * fit_cr[0] * y_eval * self.ym_per_pix + fit_cr[1]) ** 2) ** 1.5) / np.absolute(2 * fit_cr[0])
+        # self.ym_per_pix = 30 / 720  # meters per pixel in y dimension
+        # self.xm_per_pix = 3.7 / 700  # meters per pixel in x dimension
+        # fit_cr = np.polyfit(y * self.ym_per_pix, x * self.xm_per_pix, 2)
+        # # Calculate the new radii of curvature
+        # curverad_meters = ((1 + (2 * fit_cr[0] * y_eval * self.ym_per_pix + fit_cr[1]) ** 2) ** 1.5) / np.absolute(2 * fit_cr[0])
         return (curverad, curverad_meters)
-
-    def correct_with_prev(self):
-        pass
 
     def _check_and_measure_curvative(self, fit, x, y):
         curve = self._measure_curvative(fit, x, y)
         if abs(curve[0] - self.curve[0]) < self.curve_margin:
             self.curve = curve
             return True
-        print(self.lane_name, self.curve, '->', curve, ':', abs(curve[0] - self.curve[0]))
         return False
 
     def append_data(self, fit):
@@ -317,6 +323,7 @@ class Line():
         self.best_fit = np.average(self.current_fit, axis=0)
         fit = self.best_fit
         self.best_fitx = fit[0] * self.ploty ** 2 + fit[1] * self.ploty + fit[2]
+        self.curven = self._measure_curvative(fit)
 
     def update(self, frame_bin, base=None, ploty=None, found=True):
         if ploty is not None:
@@ -327,7 +334,6 @@ class Line():
             if self.detected:
                 fit, found = self._find(frame_bin)
             else:
-                print('Find new')
                 fit, found = self._find_new(frame_bin)
             self.fitx = fit[0] * self.ploty ** 2 + fit[1] * self.ploty + fit[2]
             if found:
@@ -346,6 +352,9 @@ class LinesSearch():
         self.ploty = None
 
     def _is_line_detected(self):
+        """
+        :return: True if both lines were detected on previous run
+        """
         return self.left_line.detected and self.right_line.detected
 
     def _get_ploty(self):
@@ -353,21 +362,11 @@ class LinesSearch():
             self.ploty = np.linspace(0, self.frame.shape[0], self.frame.shape[0], endpoint=False)
         return self.ploty
 
-    def _detect_lines_base2(self):
-        half_height = self.binary.shape[0] // 2
-        half_frame = self.binary[half_height:, :]
-        self.histogram = np.sum(half_frame, axis=0)
-        l1_base = np.argmax(self.histogram)
-        margin = 300
-        # TODO: could be out of shape:
-        l1 = [l1_base - margin, l1_base + margin]
-        l2_hist = np.concatenate((self.histogram[:l1[0]], self.histogram[l1[1]:]))
-        l2_base = np.argmax(l2_hist) + (2 * margin)
-        left_base = min(l1_base, l2_base)
-        right_base = max(l1_base, l2_base)
-        return (left_base, right_base)
-
     def _detect_lines_base(self):
+        """
+        looking for the line bases on a new image
+        :return: (left base, right base)
+        """
         half_height = self.binary.shape[0] // 2
         half_frame = self.binary[half_height:, :]
         self.histogram = np.sum(half_frame, axis=0)
@@ -376,27 +375,38 @@ class LinesSearch():
         right_base = np.argmax(self.histogram[midpoint:]) + midpoint
         return (left_base, right_base)
 
-
     def _detect_lines(self):
-        # if 0:
-        if self._is_line_detected():
-            left_base = None
-            right_base = None
-        else:
+        """
+        depending on the current state, the method is looking for the lines
+        :return:
+        """
+        left_base = None
+        right_base = None
+        if not self._is_line_detected():
             left_base, right_base = self._detect_lines_base()
         self.left_line.update(self.binary, left_base, self._get_ploty())
         self.right_line.update(self.binary, right_base, self._get_ploty())
         if not self._check_curvative():
-            pass
+            return False
+        return True
 
     def _check_curvative(self):
-        l_curvative = self.left_line.curve[0]
-        r_curvative = self.right_line.curve[0]
-        if (abs(l_curvative - r_curvative) > 100):
+        """
+        if radius's diffrence is more than 300m returns False
+        :return:
+        """
+        l_curvative = self.left_line.curve[1]
+        r_curvative = self.right_line.curve[1]
+        if (abs(l_curvative - r_curvative) > 300):
             return False
         return True
 
     def plot(self, show=False):
+        """
+        Drawing the lane on the initial frame
+        :param show:
+        :return:
+        """
         left_fitx = self.left_line.best_fitx
         right_fitx = self.right_line.best_fitx
         # Recast the x and y points into usable format for cv2.fillPoly()
@@ -409,11 +419,30 @@ class LinesSearch():
         undist_frame = self.image_binarizer.undistort(self.frame)
         unwarp = self.image_binarizer.unwarp(color_warp)
         ret = cv2.addWeighted(undist_frame, 1, unwarp, 0.3, 0)
-        curvl = "{:.2f}m".format(self.left_line.curve[1])
-        curvr = "{:.2f}m".format(self.right_line.curve[1])
+        ret = overlay_image(ret,  self.image_binarizer.transform(self.frame), (0, 0), (200, 400))
+        ret = overlay_image(ret, self.binary, (402, 0), (200, 400))
+
+        curvr = curvl = "---m"
+        if self.left_line.curven[1] < 2500:
+            curvl = "{:.2f}m".format(self.left_line.curven[1])
+        if self.right_line.curven[1] < 2500:
+            curvr = "{:.2f}m".format(self.right_line.curven[1])
         textSize,_ = cv2.getTextSize(curvr, font, 1, 2)
         cv2.putText(ret, curvl, (0, ret.shape[0]-textSize[1]), font, 1, (255, 0, 0), 2)
         cv2.putText(ret, curvr, (ret.shape[1]-textSize[0], ret.shape[0]-textSize[1]), font, 1, (0, 0, 255), 2)
+
+        left_bx = np.average(left_fitx[-10:])
+        right_bx = np.average(right_fitx[-10:])
+        lane_width = 0.00755 * abs(right_bx - left_bx)
+        cv2.putText(ret, "Lane width:{:.2f}".format(lane_width), (0, ret.shape[0]-3*textSize[1]), font, 1, (255, 0, 255), 2)
+
+        lane_mid = (right_bx - left_bx) / 2 + left_bx
+        middle = self.binary.shape[1] / 2
+        xm_per_pix = 3.7 / 700  # meters per pixel in x dimension
+        offset = abs(lane_mid-middle)*xm_per_pix
+        offset_str = "offset: {:.2f}m".format(offset)
+        textSize,_ = cv2.getTextSize(offset_str, font, 1, 2)
+        cv2.putText(ret, offset_str, (ret.shape[1]-textSize[0], ret.shape[0]-3*textSize[1]), font, 1, (255, 0, 255), 2)
         if show:
             plot_images(((self.frame), (ret)), im_prep=bgr2rgb)
         return ret
@@ -430,11 +459,7 @@ if __name__ == '__main__':
     ls = LinesSearch(ImageSobelHlsBinarizer())
 
     vid = cv2.VideoCapture('project_video.mp4')
-    # vid.open()
-    i = 0
     while vid.isOpened():
-        i += 1
-        print(i)
         ret, camera_img = vid.read()
         if ret is None:
             break
@@ -444,11 +469,7 @@ if __name__ == '__main__':
         # ls.plot(True)
         # continue
         result = ls.plot()
-        undist = ls.image_binarizer.birdEyeTransform.transform(camera_img)
-        ret = overlay_image(result, undist, (0, 0), (200, 400))
-        ret = overlay_image(ret, ls.binary, (402, 0), (200, 400))
-        cv2.putText(ret, str(i), (10, 200), font, 1, (0, 255, 255), 2, cv2.LINE_AA)
-        cv2.imshow('all_result', ret)
+        cv2.imshow('all_result', result)
         stop = False
         # while True:
         if 1:
