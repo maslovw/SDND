@@ -44,7 +44,7 @@ I then used the output `objpoints` and `imgpoints` to compute the camera calibra
 
 #### 1. Perspective transform
 
-The code for my perspective transform includes a function called `warp_camera()`, which appears in lines 60 through 68 in the file `p2.py` 
+The code for my perspective transform includes a function called `warp_camera()`, which appears in lines 60 through 68 in the file [p2.py](https://github.com/maslovw/SDND/blob/04364d341f09f3027bb1acb585cafefcc2ede14c/Advanced-Lane-Lines/p2.py#L60)
 The `warp_camera()` function takes as inputs an image (`img`). I chose the hardcode the camera matrix:
 
 ```python
@@ -80,7 +80,7 @@ Here's an example of my output for this step.  (note: this is not actually from 
 
 #### 3. Lines detection
 
-The first step in this method is to compute the base points of the lanes. This is done in the histogram_base_points function in lines 370 - 376 of p2.py or in the AdvanceLaneFinding section 4.5. The first step is to compute a histogram of the lower half of the thresholded image. The histogram corresponding to the thresholded, warped image in the previous section is shown below:
+The first step in this method is to compute the base points of the lanes. This is done in the histogram_base_points function in lines 370 - 376 of [p2.py](https://github.com/maslovw/SDND/blob/04364d341f09f3027bb1acb585cafefcc2ede14c/Advanced-Lane-Lines/p2.py#L365) or in the AdvanceLaneFinding section 4.5. The first step is to compute a histogram of the lower half of the thresholded image. The histogram corresponding to the thresholded, warped image in the previous section is shown below:
 
 ![histogram](./examples/historgram.png)
 
@@ -94,7 +94,7 @@ The filtered pixels, along with a weighted average of prior lane pixels are used
 
 The polynomial is then used to create an image mask that describes a region of interest which is then used by the masking method in upcoming frames.
 
-The sanity check is defined in the method Line._check_and_measure_curvative() in p2.py: lines 313-318 . It is called by the Line._find. The stored value of the radius of curvature of the lane is used to see if the current radius of curvature has deviated by more than 50%.
+The sanity check is defined in the method Line._check_and_measure_curvative() in [p2.py](https://github.com/maslovw/SDND/blob/04364d341f09f3027bb1acb585cafefcc2ede14c/Advanced-Lane-Lines/p2.py#L313): lines 313-318 . It is called by the Line._find. The stored value of the radius of curvature of the lane is used to see if the current radius of curvature has deviated by more than 50%.
 
 #### 5. Radius of curvature and vehicle position
 
