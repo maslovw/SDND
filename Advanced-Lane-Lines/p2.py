@@ -458,7 +458,8 @@ class LinesSearch():
 if __name__ == '__main__':
     ls = LinesSearch(ImageSobelHlsBinarizer())
 
-    vid = cv2.VideoCapture('project_video.mp4')
+    # vid = cv2.VideoCapture('project_video.mp4')
+    vid = cv2.VideoCapture('challenge_video.mp4')
     while vid.isOpened():
         ret, camera_img = vid.read()
         if ret is None:
