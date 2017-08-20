@@ -3,9 +3,20 @@ import cv2
 import numpy as np
 from matplotlib.pyplot import *
 import matplotlib.pylab as pylab
+from scipy.misc import imresize
 
 pylab.rcParams['figure.figsize'] = (14, 6)
+font = cv2.FONT_HERSHEY_COMPLEX
 
+def overlay_image(img, s_img, pos, size=None):
+    x_offset,y_offset=pos
+    l_img = img.copy()
+    if size is not None:
+        s_img = imresize(s_img, size)
+    if len(s_img.shape) == 2:
+        s_img = cv2.merge((s_img,s_img,s_img))
+    l_img[y_offset:y_offset+s_img.shape[0], x_offset:x_offset+s_img.shape[1]] = s_img
+    return l_img
 
 def bgr2rgb(img):
     return cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
@@ -35,13 +46,13 @@ class BirdEyeTransform():
     def __init__(self):
         self.dist = np.array([[-0.24688507, -0.02373154, -0.00109831, 0.00035107, -0.00259869]])
         self.mtx = np.array([
-            [1.15777818e+03, 0.00000000e+00, 6.67113857e+02],
-            [0.00000000e+00, 1.15282217e+03, 3.86124583e+02],
-            [0.00000000e+00, 0.00000000e+00, 1.00000000e+00]])
+            [  1.15777818e+03,   0.00000000e+00,   6.67113857e+02],
+            [  0.00000000e+00,   1.15282217e+03,   3.86124583e+02],
+            [  0.00000000e+00,   0.00000000e+00,   1.00000000e+00]])
         self.camera_M = np.array([
-            [-4.09514513e-01, -1.54251784e+00, 9.09522880e+02],
-            [-3.55271368e-15, -1.95774942e+00, 8.94691487e+02],
-            [-3.57786717e-18, -2.38211439e-03, 1.00000000e+00]])
+            [ -3.38244137e-01,  -1.53412508e+00,   8.61613049e+02],
+            [  1.44328993e-15,  -1.76337943e+00,   7.75886951e+02],
+            [  5.96311195e-18,  -2.37522550e-03,   1.00000000e+00]])
 
     def undistort(self, img):
         return cv2.undistort(img, self.mtx, self.dist, None, self.mtx)
@@ -137,6 +148,37 @@ class ImageHlsBinarizer():
         return ret
 
 
+def region_of_interest(img):
+    """
+    Applies an image mask on warped image
+
+    Only keeps the region of the image defined by the polygon
+    formed from `vertices`. The rest of the image is set to black.
+    """
+
+    h, w = img.shape[:2]
+    reg_bl = [220, h]
+    reg_br = [w - 220, h]
+    reg_tl = [100, 0]
+    reg_tr = [w - 100, 0]
+    vertices = np.array([[reg_bl, reg_tl, reg_tr, reg_br]], dtype=np.int32)
+    # defining a blank mask to start with
+    mask = np.zeros_like(img)
+
+    # defining a 3 channel or 1 channel color to fill the mask with depending on the input image
+    if len(img.shape) > 2:
+        channel_count = img.shape[2]  # i.e. 3 or 4 depending on your image
+        ignore_mask_color = (255,) * channel_count
+    else:
+        ignore_mask_color = 255
+
+    # filling pixels inside the polygon defined by "vertices" with the fill color
+    cv2.fillPoly(mask, vertices, ignore_mask_color)
+
+    # returning the image only where mask pixels are nonzero
+    masked_image = cv2.bitwise_and(img, mask)
+    return masked_image
+
 class ImageSobelHlsBinarizer():
     def __init__(self):
         self.birdEyeTransform = BirdEyeTransform()
@@ -149,7 +191,7 @@ class ImageSobelHlsBinarizer():
         hls_bin = self.hlsBinarizer.binarize(img)
         binary = np.zeros(img.shape[:2])
         binary[(hls_bin == 1) | (sobel == 1)] = 255
-        # binary = region_of_interest(binary)
+        binary = region_of_interest(binary)
         return binary
 
     def undistort(self, frame):
@@ -160,7 +202,7 @@ class ImageSobelHlsBinarizer():
 
 
 class Line():
-    def __init__(self, margin=100):
+    def __init__(self, LaneName, margin=100):
         # was the line detected in the last iteration?
         self.detected = False
         # x values of the last n fits of the line
@@ -170,9 +212,9 @@ class Line():
         # polynomial coefficients averaged over the last n iterations
         self.best_fit = None
         # polynomial coefficients for the most recent fit
-        self.current_fit = [np.array([False])]
+        self.current_fit = []
         # radius of curvature of the line in some units
-        self.radius_of_curvature = None
+        self.curve = None
         # distance in meters of vehicle center from the line
         self.line_base_pos = None
         # difference in fit coefficients between last and new fits
@@ -187,6 +229,13 @@ class Line():
         self.minpix = 50
         self.nwindows = 9
         self.ploty = None
+        self.curve_margin = 300
+        # Define conversions in x and y from pixels space to meters
+        self.ym_per_pix = 30 / 720  # meters per pixel in y dimension
+        self.xm_per_pix = 3.7 / 700  # meters per pixel in x dimension
+        self.lane_name = LaneName
+        self.n = 5
+
 
     def _process_window(self, win_y_low, win_y_high, nonzero):
         # Identify window boundaries in x and y (and right and left)
@@ -200,7 +249,6 @@ class Line():
         # If you found > minpix pixels, recenter next window on their mean position
         if len(good_inds) > self.minpix:
             self.base = np.int(np.mean(nonzerox[good_inds]))
-        # print("process_window len(inds)", len(good_inds))
         return good_inds
 
     def _slide_window(self, frame_bin):
@@ -218,31 +266,79 @@ class Line():
         nonzerox = nonzero[1]
         x = nonzerox[lane_inds]
         y = nonzeroy[lane_inds]
-        fit = np.polyfit(y, x, 2)
-        # print(fit)
+        self.fit = np.polyfit(y, x, 2)
+        self.curve = self._measure_curvative(self.fit, x, y)
+        return (self.fit, True)
+
+    def _find_new(self, frame_bin):
+        fit = self._slide_window(frame_bin)
         return fit
 
-    def _plot(self, frame):
-        line_window1 = np.array([np.transpose(np.vstack([self.fitx - self.margin, self.ploty]))])
-        line_window2 = np.array([np.flipud(np.transpose(np.vstack([self.left_fitx + self.margin, self.ploty])))])
-        line_pts = np.hstack((line_window1, line_window2))
+    def _find(self, frame_bin):
+        nonzero = frame_bin.nonzero()
+        nonzeroy = nonzero[0]
+        nonzerox = nonzero[1]
+        lane_inds = (
+            (nonzerox > (self.fit[0] * (nonzeroy ** 2) + self.fit[1] * nonzeroy + self.fit[2] - self.margin)) & (
+            nonzerox < (self.fit[0] * (nonzeroy ** 2) + self.fit[1] * nonzeroy + self.fit[2] + self.margin)))
+        x = nonzerox[lane_inds]
+        y = nonzeroy[lane_inds]
+        fit = np.polyfit(y, x, 2)
+        is_curv = self._check_and_measure_curvative(fit, x, y)
+        if is_curv:
+            return (fit, True)
+        print("curve doesn't fit...")
+        return (self.fit, False)
+
+    def _measure_curvative(self, fit, x, y):
+        y_eval = np.max(self.ploty)
+        curverad = ((1 + (2 * fit[0] * y_eval + fit[1]) ** 2) ** 1.5) / np.absolute(2 * fit[0])
+
+        # Fit new polynomials to x,y in world space
+        fit_cr = np.polyfit(y * self.ym_per_pix, x * self.xm_per_pix, 2)
+        # Calculate the new radii of curvature
+        curverad_meters = ((1 + (2 * fit_cr[0] * y_eval * self.ym_per_pix + fit_cr[1]) ** 2) ** 1.5) / np.absolute(2 * fit_cr[0])
+        return (curverad, curverad_meters)
+
+    def correct_with_prev(self):
+        pass
+
+    def _check_and_measure_curvative(self, fit, x, y):
+        curve = self._measure_curvative(fit, x, y)
+        if abs(curve[0] - self.curve[0]) < self.curve_margin:
+            self.curve = curve
+            return True
+        print(self.lane_name, self.curve, '->', curve, ':', abs(curve[0] - self.curve[0]))
+        return False
+
+    def append_data(self, fit):
+        self.current_fit.append(fit)
+        self.current_fit = self.current_fit[-self.n:]
+        self.best_fit = np.average(self.current_fit, axis=0)
+        fit = self.best_fit
+        self.best_fitx = fit[0] * self.ploty ** 2 + fit[1] * self.ploty + fit[2]
 
     def update(self, frame_bin, base=None, ploty=None, found=True):
-        self.detected = found
         if ploty is not None:
             self.ploty = ploty
         if found:
             if base is not None:
                 self.base = base
-            fit = self._slide_window(frame_bin)
-            # print('fit is ', fit)
+            if self.detected:
+                fit, found = self._find(frame_bin)
+            else:
+                print('Find new')
+                fit, found = self._find_new(frame_bin)
             self.fitx = fit[0] * self.ploty ** 2 + fit[1] * self.ploty + fit[2]
+            if found:
+                self.append_data(fit)
+        self.detected = found
 
 
 class LinesSearch():
     def __init__(self, image_binarizer, windows_count=10):
-        self.left_line = Line()
-        self.right_line = Line()
+        self.left_line = Line('Left')
+        self.right_line = Line('Right')
         self.windows_count = windows_count
         self.frame = None
         self.binary = None
@@ -257,24 +353,52 @@ class LinesSearch():
             self.ploty = np.linspace(0, self.frame.shape[0], self.frame.shape[0], endpoint=False)
         return self.ploty
 
-    def _detect_lines(self):
+    def _detect_lines_base2(self):
         half_height = self.binary.shape[0] // 2
         half_frame = self.binary[half_height:, :]
         self.histogram = np.sum(half_frame, axis=0)
         l1_base = np.argmax(self.histogram)
-        margin = self.left_line.margin
+        margin = 300
         # TODO: could be out of shape:
         l1 = [l1_base - margin, l1_base + margin]
         l2_hist = np.concatenate((self.histogram[:l1[0]], self.histogram[l1[1]:]))
         l2_base = np.argmax(l2_hist) + (2 * margin)
         left_base = min(l1_base, l2_base)
         right_base = max(l1_base, l2_base)
+        return (left_base, right_base)
+
+    def _detect_lines_base(self):
+        half_height = self.binary.shape[0] // 2
+        half_frame = self.binary[half_height:, :]
+        self.histogram = np.sum(half_frame, axis=0)
+        midpoint = self.histogram.shape[0] // 2
+        left_base = np.argmax(self.histogram[:midpoint])
+        right_base = np.argmax(self.histogram[midpoint:]) + midpoint
+        return (left_base, right_base)
+
+
+    def _detect_lines(self):
+        # if 0:
+        if self._is_line_detected():
+            left_base = None
+            right_base = None
+        else:
+            left_base, right_base = self._detect_lines_base()
         self.left_line.update(self.binary, left_base, self._get_ploty())
         self.right_line.update(self.binary, right_base, self._get_ploty())
+        if not self._check_curvative():
+            pass
 
-    def plot(self):
-        left_fitx = self.left_line.fitx
-        right_fitx = self.right_line.fitx
+    def _check_curvative(self):
+        l_curvative = self.left_line.curve[0]
+        r_curvative = self.right_line.curve[0]
+        if (abs(l_curvative - r_curvative) > 100):
+            return False
+        return True
+
+    def plot(self, show=False):
+        left_fitx = self.left_line.best_fitx
+        right_fitx = self.right_line.best_fitx
         # Recast the x and y points into usable format for cv2.fillPoly()
         pts_left = np.array([np.transpose(np.vstack([left_fitx, self.ploty]))])
         pts_right = np.array([np.flipud(np.transpose(np.vstack([right_fitx, self.ploty])))])
@@ -285,7 +409,14 @@ class LinesSearch():
         undist_frame = self.image_binarizer.undistort(self.frame)
         unwarp = self.image_binarizer.unwarp(color_warp)
         ret = cv2.addWeighted(undist_frame, 1, unwarp, 0.3, 0)
-        plot_images((bgr2rgb(self.frame), bgr2rgb(ret), self.binary), row=2)
+        curvl = "{:.2f}m".format(self.left_line.curve[1])
+        curvr = "{:.2f}m".format(self.right_line.curve[1])
+        textSize,_ = cv2.getTextSize(curvr, font, 1, 2)
+        cv2.putText(ret, curvl, (0, ret.shape[0]-textSize[1]), font, 1, (255, 0, 0), 2)
+        cv2.putText(ret, curvr, (ret.shape[1]-textSize[0], ret.shape[0]-textSize[1]), font, 1, (0, 0, 255), 2)
+        if show:
+            plot_images(((self.frame), (ret)), im_prep=bgr2rgb)
+        return ret
 
     def _binarize(self, frame):
         return self.image_binarizer.binarize(frame)
@@ -293,106 +424,44 @@ class LinesSearch():
     def search(self, frame):
         self.frame = frame
         self.binary = self._binarize(frame)
-        if not self._is_line_detected():
-            print("detecting")
-            self._detect_lines()
-        else:
-            print('guessing')
-            self.left_line.update(self.binary)
-            self.right_line.update(self.binary)
-
-
-def find_window_centroids(warped, window_width, window_height, margin):
-    window_centroids = []  # Store the (left,right) window centroid positions per level
-    window = np.ones(window_width)  # Create our window template that we will use for convolutions
-
-    # First find the two starting positions for the left and right lane by using np.sum to get the vertical image slice
-    # and then np.convolve the vertical image slice with the window template
-
-    # Sum quarter bottom of image to get slice, could use a different ratio
-    l_sum = np.sum(warped[int(3 * warped.shape[0] / 4):, :int(warped.shape[1] / 2)], axis=0)
-    l_center = np.argmax(np.convolve(window, l_sum)) - window_width / 2
-    r_sum = np.sum(warped[int(3 * warped.shape[0] / 4):, int(warped.shape[1] / 2):], axis=0)
-    r_center = np.argmax(np.convolve(window, r_sum)) - window_width / 2 + int(warped.shape[1] / 2)
-
-    # Add what we found for the first layer
-    window_centroids.append((l_center, r_center))
-
-    # Go through each layer looking for max pixel locations
-    for level in range(1, (int)(warped.shape[0] / window_height)):
-        # convolve the window into the vertical slice of the image
-        image_layer = np.sum(
-            warped[int(warped.shape[0] - (level + 1) * window_height):int(warped.shape[0] - level * window_height), :],
-            axis=0)
-        conv_signal = np.convolve(window, image_layer)
-        # Find the best left centroid by using past left center as a reference
-        # Use window_width/2 as offset because convolution signal reference is at right side of window, not center of window
-        offset = window_width / 2
-        l_min_index = int(max(l_center + offset - margin, 0))
-        l_max_index = int(min(l_center + offset + margin, warped.shape[1]))
-        l_center = np.argmax(conv_signal[l_min_index:l_max_index]) + l_min_index - offset
-        # Find the best right centroid by using past right center as a reference
-        r_min_index = int(max(r_center + offset - margin, 0))
-        r_max_index = int(min(r_center + offset + margin, warped.shape[1]))
-        r_center = np.argmax(conv_signal[r_min_index:r_max_index]) + r_min_index - offset
-        # Add what we found for that layer
-        window_centroids.append((l_center, r_center))
-
-    return window_centroids
-
-
-def window_mask(width, height, img_ref, center, level):
-    output = np.zeros_like(img_ref)
-    hl = int(img_ref.shape[0] - (level + 1) * height)
-    hh = int(img_ref.shape[0] - level * height)
-    wl = max(0, int(center - width / 2))
-    wh = min(int(center + width / 2), img_ref.shape[1])
-    output[hl:hh, wl:wh] = 1
-    return output
-
-
-def sliding_window(warped, window_width, window_height, margin):
-    window_centroids = find_window_centroids(warped, window_width, window_height, margin)
-
-    # If we found any window centers
-    print(len(window_centroids))
-    if len(window_centroids) > 0:
-
-        # Points used to draw all the left and right windows
-        l_points = np.zeros_like(warped)
-        r_points = np.zeros_like(warped)
-
-        # Go through each level and draw the windows
-        for level in range(0, len(window_centroids)):
-            print(level, window_centroids[level])
-            # Window_mask is a function to draw window areas
-            l_mask = window_mask(window_width, window_height, warped, window_centroids[level][0], level)
-            r_mask = window_mask(window_width, window_height, warped, window_centroids[level][1], level)
-            # Add graphic points from window mask here to total pixels found
-            l_points[(l_points == 255) | ((l_mask == 1))] = 255
-            r_points[(r_points == 255) | ((r_mask == 1))] = 255
-
-        # Draw the results
-        template = np.array(r_points + l_points, np.uint8)  # add both left and right window pixels together
-        zero_channel = np.zeros_like(template)  # create a zero color channel
-        template = np.array(cv2.merge((zero_channel, template, zero_channel)), np.uint8)  # make window pixels green
-        warpage = np.array(cv2.merge((warped, warped, warped)),
-                           np.uint8)  # making the original road pixels 3 color channels
-        output = cv2.addWeighted(warpage, 1, template, 0.5, 0.0)  # overlay the orignal road image with window results
-
-    # If no window centers found, just display orginal road image
-    else:
-        output = np.array(cv2.merge((warped, warped, warped)), np.uint8)
-
-    return output
-
+        self._detect_lines()
 
 if __name__ == '__main__':
     ls = LinesSearch(ImageSobelHlsBinarizer())
 
-    camera_img = cv2.imread('test_images/straight_lines1.jpg')
-    ls.search(camera_img)
-    # ls.plot()
+    vid = cv2.VideoCapture('project_video.mp4')
+    # vid.open()
+    i = 0
+    while vid.isOpened():
+        i += 1
+        print(i)
+        ret, camera_img = vid.read()
+        if ret is None:
+            break
+        # camera_img = cv2.imread('test_images/test5.jpg')
+        # camera_img = cv2.imread('test_images/straight_lines1.jpg')
+        ls.search(camera_img)
+        # ls.plot(True)
+        # continue
+        result = ls.plot()
+        undist = ls.image_binarizer.birdEyeTransform.transform(camera_img)
+        ret = overlay_image(result, undist, (0, 0), (200, 400))
+        ret = overlay_image(ret, ls.binary, (402, 0), (200, 400))
+        cv2.putText(ret, str(i), (10, 200), font, 1, (0, 255, 255), 2, cv2.LINE_AA)
+        cv2.imshow('all_result', ret)
+        stop = False
+        # while True:
+        if 1:
+            key = cv2.waitKey(1) & 0xFF
+            if key == ord('n'):
+                break
+            if key == ord(' '):
+                stop = True
+                break
+        if stop:
+            break
 
-    out = sliding_window(ls.binary, 50, 80, 100)
-    plot_images((out, camera_img))
+    vid.release()
+    cv2.destroyAllWindows()
+
+
