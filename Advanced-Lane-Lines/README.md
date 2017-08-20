@@ -82,11 +82,11 @@ Here's an example of my output for this step.  (note: this is not actually from 
 
 The first step in this method is to compute the base points of the lanes. This is done in the histogram_base_points function in lines 370 - 376 of p2.py or in the AdvanceLaneFinding section 4.5. The first step is to compute a histogram of the lower half of the thresholded image. The histogram corresponding to the thresholded, warped image in the previous section is shown below:
 
-![threshold image](./examples/historgram.png)
+![histogram](./examples/historgram.png)
 
 Second step is to find all the pixels, that belongs to the left and right lines separately (AdvanceLaneFinding Section 5). I used simple Sliding windows as described in the lesson
 
-![threshold image](./examples/sliding_windows.png)
+![sliding_windows](./examples/sliding_windows.png)
 
 The algorithm splits the image into a number of horizontal bands (10). Starting at the lowest band, a window of a fixed width (240 pixels) centered at both base points is considered. The x and y coordinates of all the nonzero pixels in these windows are compiled into into separate lists. The base point for the next band is assumed to be the column with the maximum number of pixels in the current band. After all the points are accumulated, the function reject_outliers is used to remove any points whose x or y coordinates are outside of two standard deviations from the mean value. This helps remove irrelevant pixels from the data.
 
@@ -138,9 +138,9 @@ def process_image(image):
 
 `ls.plot` draws the lane on picture, plus adds some additional 'debugging' data, like birds-eye view, thesholded image, curvatives of left and right lines, car's offset from a lane center and lane width
 
-![output_images][./output_images/img4.jpg]
-![output_images][./output_images/img613.jpg]
-![output_images][./output_images/img637.jpg]
+![output_images](./output_images/img4.jpg)
+![output_images](./output_images/img613.jpg)
+![output_images](./output_images/img637.jpg)
 
 ---
 
@@ -148,6 +148,7 @@ def process_image(image):
 
 [![Pipeline video](./output_images/img4.jpg)](https://youtu.be/cqj7gO7inGw)
 
+https://youtu.be/cqj7gO7inGw
 ---
 
 ### Discussion
