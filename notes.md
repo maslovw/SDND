@@ -7,3 +7,16 @@ https://github.com/PaulHeraty/DeepLearningLaneFinding
 ### colors explained
 https://stkexchange.wordpress.com/2017/08/08/color-selection-in-3-steps/
 ![image](https://stkexchange.files.wordpress.com/2017/08/color_selection.gif?w=354&h=555)
+
+### YOLO
+origin 
+
+https://pjreddie.com/darknet/yolo/
+
+YOLO to Keras
+
+https://github.com/allanzelener/YAD2K
+
+worth looking at 
+
+https://github.com/experiencor/basic-yolo-keras
