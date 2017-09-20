@@ -64,6 +64,6 @@ A square root of the image normalizes it and gets uniform brightness, reducing t
 Before trying out the HOG, I decided to see, what a picture of a vehicle looks like in different
 color spaces
 
-![color_spaces](color_spaces)
+![color_spaces][color_spaces]
 
 
