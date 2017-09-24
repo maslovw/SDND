@@ -81,11 +81,10 @@ def imadjust_1(src, dst, tol=1, vin=[0,255], vout=(0,255)):
     return dst
 
 def imadjust(src, tol=1, vin=[0,255], vout=(0,255)):
-    dst = np.zeros(src.shape, dtype=np.ubyte)
-    #dst = src.copy()
+    dst = np.zeros_like(src)
     for i in range(src.shape[2]):
-        #imadjust_2(src[:,:,i], dst[:,:,i], tol, vin, vout)
-        dst[:,:,i] = imadjust_2(src[:,:,i], tol, vin, vout)
+        imadjust_1(src[:,:,i], dst[:,:,i], tol, vin, vout)
+        #dst[:,:,i] = imadjust_2(src[:,:,i], tol, vin, vout)
     return dst  
     
 def equalizeHistHSV(src):
