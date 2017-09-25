@@ -242,3 +242,18 @@ which can give false-positives, but we already have a mechanism to filter that o
 On my NVIDIA M1000M, it takes about 256ms to classify all the sliding windows on cropped image
 
 [Video on youtube](https://youtu.be/4M_emgQmKIE)
+
+## Summary:
+
+SVC classifier on HOG works, but very slow, and it's really hard to make it robust.
+CNN with sliding windows are much faster and simplier, even thow I can improve it to have better results. 
+
+But anyway, now we can use better approach to solve this problem faster and better: YOLO or SSD networks, that produce boundary boxex
+itself.
+
+I tryed to play with YOLO on Keras, here's the result https://youtu.be/J9imeiAzQxM
+
+It can work ~23 fps on my laptop, which is pretty impressive.
+
+https://github.com/maslovw/SDND/blob/master/VehicleDetection/Yolo_vehilcle_detection.ipynb
+
