@@ -53,7 +53,7 @@ Code itself and some off description is in the `vehicle_detection` jupyter noteb
 Udacity provides two data sets of [vehicle](https://s3.amazonaws.com/udacity-sdc/Vehicle_Tracking/vehicles.zip) 
 and [non-vehicle](https://s3.amazonaws.com/udacity-sdc/Vehicle_Tracking/non-vehicles.zip) images.
 
-![examples_vehicle_non-vehicle](data_example)
+![examples_vehicle_non-vehicle][data_example]
 
 [code](https://maslovw.github.io/SDND/VehicleDetection/vehicle_detection.html#Observe-dataset)
 
@@ -65,8 +65,6 @@ recognize a vehicle on the picture
 
 There are many ways how to adjust picture and partly get rid of shadows.
 I chose matlabs feature [imadjust](https://stackoverflow.com/a/44529776/4875690)
-
-![imadjust_example][imadjust_example]
 
 [code](https://maslovw.github.io/SDND/VehicleDetection/vehicle_detection.html#Image-preprocessing)
 
