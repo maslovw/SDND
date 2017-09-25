@@ -91,7 +91,7 @@ As advised I took YCrCb color space for classification
 
 [Histogram of Oriented Gradients (HOG)](http://scikit-image.org/docs/dev/auto_examples/features_detection/plot_hog.html)
 
-![hog_example][hog_exapmle]
+![hog_example][hog_example]
 
 [code](https://maslovw.github.io/SDND/VehicleDetection/vehicle_detection.html#HOG-on-LUV-color-space)
 
@@ -209,10 +209,11 @@ LinearSVC on HOG
 After many tries, I decided to see how much better simple CNN will do.
 
 ## 7. CNN classifier
-[Link to CNN classification] (https://maslovw.github.io/SDND/VehicleDetection/vehicle_detection.html#NN-classification)
+[Link to CNN classification implementation](https://maslovw.github.io/SDND/VehicleDetection/vehicle_detection.html#NN-classification)
 #### 7.1. CNN structure
 
 |Layer|Description|params|
+|:---------------------:|:---------------------------------------------:|:-------:|
 |input|64x64x3 bgr picture||
 |Lambda x: x/127.5-1|Scaling the picture||
 |conv2d|64x64x16|448|
