@@ -5,7 +5,7 @@
 The Project
 ---
 
-The goals / steps of this project are the following:
+The goals/steps of this project are the following:
 
 * Perform a Histogram of Oriented Gradients (HOG) feature extraction on 
 a labeled training set of images and train a classifier Linear SVM classifier
@@ -60,7 +60,7 @@ and [non-vehicle](https://s3.amazonaws.com/udacity-sdc/Vehicle_Tracking/non-vehi
 All images are 64x64 pixels, in total there are 8792 images of vehicles and 8968 non-vehicle .png images
 
 ### 2. Image preprocessing
-Some of the images are a bit blury or light distributed quite oddly, which makes it harder to 
+Some of the images are a bit blurry or light distributed quite oddly, which makes it harder to 
 recognize a vehicle on the picture
 
 There are many ways how to adjust picture and partly get rid of shadows.
@@ -123,7 +123,7 @@ To train the classifer, first I need to prepare the data set:
 * [Split dataset into Train and Test sets](https://maslovw.github.io/SDND/VehicleDetection/vehicle_detection.html#Split-the-dataset-into-training-and-testing-sets)
 * [Train LinearSVC](https://maslovw.github.io/SDND/VehicleDetection/vehicle_detection.html#Training-LinearSVC)
 
-Scaling the data is quite important, otherwise classifier mostly will see only histograms
+Scaling the data is quite important, otherwise, classifier mostly will see only histograms
 
 ![scaling_data.png][scaling_data]
 
@@ -146,7 +146,7 @@ However, there are false positives results:
 To find cars in the image it's required to build sliding window mechanism. 
 
 #### 5.1. Crop picture
-To reduce amount of data and cut the skys out, I just croped the picture
+To reduce amount of data and cut the sky out, I just cropped the picture
 
 ![crop][crop]
 
@@ -157,18 +157,18 @@ First I implemented simple sliding window generator without using padding.
 To take different sizes I resize cropped picture 8 times by factor 1.35 (without using 
 original size picture to filter too small windows). 
 
-Sliding window size is 64x64 just like we need for the classificator.
+The sliding window size is 64x64 just like we need for the classification.
 
-To get all sliding windows features from one cropped pictuer it takes ~5.5 sec! (on my laptop)
+To get all sliding windows features from one cropped picture it takes ~5.5 sec! (on my laptop)
 
 ![sliding_window][sliding_window]
 
 #### 5.3. Sliding window over HOG
-[Here](https://maslovw.github.io/SDND/VehicleDetection/vehicle_detection.html#Sliding-window-on-HOG) 
-you can find my implementation for HOG sliding window. It's quite simple and probably won't work
+
+My implementation for HOG sliding window can be found [Here](https://maslovw.github.io/SDND/VehicleDetection/vehicle_detection.html#Sliding-window-on-HOG) . It's quite simple and probably won't work
 with HOGs with parameter 'cells_per_block' > 1
 
-To be able to filter false-positives, it's recomended to build slide windows with overlapping.
+To be able to filter false-positives, it's recommended to build slide windows with overlapping.
 As one step I take 1 cell, which is 8 pixels. 
 
 So Sliding Window has window size 64x64 with step 8 pixels on x and y
@@ -201,7 +201,7 @@ Boundary boxes are built around thresholded stream_heatmap.
 
 The result of this method can be found [here](https://youtu.be/8hawest3f1U)
 
-It took 38min to build the video. I was not satisfied with result either. It was my best result using
+It took 38min to build the video. I was not satisfied with the result either. It was my best result using
 LinearSVC on HOG
 
 After many tries, I decided to see how much better simple CNN will do.
@@ -239,7 +239,6 @@ which can give false-positives, but we already have a mechanism to filter that o
 #### 7.3 CNN pipeline
 [code](https://maslovw.github.io/SDND/VehicleDetection/vehicle_detection.html#CNN-pipeline)
 
-On my NVIDEA M1000M it takes about 256ms to classify all the sliding windows on cropped image
+On my NVIDIA M1000M, it takes about 256ms to classify all the sliding windows on cropped image
 
 [Video on youtube](https://youtu.be/4M_emgQmKIE)
-
