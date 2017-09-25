@@ -38,13 +38,24 @@ Code itself and some off description is in the `vehicle_detection` jupyter noteb
 [color_spaces]: ./images/color_spaces.png
 [hog_example]: ./images/hog_example.png
 [ycrcb_example]: ./images/ycrcb_example.png
+[scaling_data]: ./images/scaling_data.png
+[cls_fp]: ./images/cls_fp.png
+[cnn_heatmap]: ./images/heatmap_cnn.png
+[boundary_boxes_svc]: ./images/svc_output.png
+[crop]: ./images/crop.png
+[sliding_window]: ./images/sliding_window.png
+[sliding_hog_window]: ./images/sliding_hog_window.png
+[heatmap_svc]: ./images/heatmap_svc.png
 
+[Notebook preview](https://maslovw.github.io/SDND/VehicleDetection/vehicle_detection.html)
 ### 1. Observing data
  
 Udacity provides two data sets of [vehicle](https://s3.amazonaws.com/udacity-sdc/Vehicle_Tracking/vehicles.zip) 
 and [non-vehicle](https://s3.amazonaws.com/udacity-sdc/Vehicle_Tracking/non-vehicles.zip) images.
 
 ![examples_vehicle_non-vehicle](data_example)
+
+[code](https://maslovw.github.io/SDND/VehicleDetection/vehicle_detection.html#Observe-dataset)
 
 All images are 64x64 pixels, in total there are 8792 images of vehicles and 8968 non-vehicle .png images
 
@@ -57,11 +68,14 @@ I chose matlabs feature [imadjust](https://stackoverflow.com/a/44529776/4875690)
 
 ![imadjust_example][imadjust_example]
 
+[code](https://maslovw.github.io/SDND/VehicleDetection/vehicle_detection.html#Image-preprocessing)
+
 A square root of the image normalizes it and gets uniform brightness, reducing the effect of shadows
 
 ![prep_image][prep_image]
 
 ### 3. Extracting features
+[code](https://maslovw.github.io/SDND/VehicleDetection/vehicle_detection.html#Extracting-features)
 
 #### 3.1. Color space
 Before trying out the HOG, I decided to see, what a picture of a vehicle looks like in different
@@ -79,6 +93,8 @@ As advised I took YCrCb color space for classification
 
 ![hog_example][hog_exapmle]
 
+[code](https://maslovw.github.io/SDND/VehicleDetection/vehicle_detection.html#HOG-on-LUV-color-space)
+
 For HOG features I choose:
 * orientations: 9
 * pixels per cells: 8
@@ -92,6 +108,139 @@ After several hundreds of tries, I decided to stop on:
 * Spatial Binning of Color (YCrCb, 16x16)
 * Histogram of all YCrCb channels (on 64x64)
 * HOG
-https://render.githubusercontent.com/view/ipynb?commit=abb99be7b6e0741d41fbd7e4de5ae57ea884d992&enc_url=68747470733a2f2f7261772e67697468756275736572636f6e74656e742e636f6d2f6d61736c6f76772f53444e442f616262393962653762366530373431643431666264376534646535616535376561383834643939322f56656869636c65446574656374696f6e2f76656869636c655f646574656374696f6e2e6970796e62&nwo=maslovw%2FSDND&path=VehicleDetection%2Fvehicle_detection.ipynb&repository_id=93343077&repository_type=Repository#Extracting-features
 
+[code](https://maslovw.github.io/SDND/VehicleDetection/vehicle_detection.html#Extracting-features)
+
+To get features out of one 64x64 image it takes ~5ms (CoreI7-6820HQ @2.7GHz)
+
+Result of get_features(..) method is a numpy array(shape=(3168,)), which quite a lot of data
+for one picture
+
+### 4. Training SVC classifier 
+
+To train the classifer, first I need to prepare the data set:
+* [Load](https://maslovw.github.io/SDND/VehicleDetection/vehicle_detection.html#Loading-training-data-set)
+* [Extract all pictures features](https://maslovw.github.io/SDND/VehicleDetection/vehicle_detection.html#Extracting-features-for-training)
+* classifier expects [scaled data](https://maslovw.github.io/SDND/VehicleDetection/vehicle_detection.html#Scale-the-data)
+* [Split dataset into Train and Test sets](https://maslovw.github.io/SDND/VehicleDetection/vehicle_detection.html#Split-the-dataset-into-training-and-testing-sets)
+* [Train LinearSVC](https://maslovw.github.io/SDND/VehicleDetection/vehicle_detection.html#Training-LinearSVC)
+
+Scaling the data is quite important, otherwise classifier mostly will see only histograms
+
+![scaling_data.png][scaling_data]
+
+Validating classifier showed
+Pretty impressive result
+
+TP  0.48, TN  0.00
+
+FN  0.52, FP  0.00
+
+score: 0.994932432432
+
+However, there are false positives results:
+
+![classification_false_positives][cls_fp]
+
+### 5. Finding cars on image
+[code](https://maslovw.github.io/SDND/VehicleDetection/vehicle_detection.html#Finding-cars-on-image)
+
+To find cars in the image it's required to build sliding window mechanism. 
+
+#### 5.1. Crop picture
+To reduce amount of data and cut the skys out, I just croped the picture
+
+![crop][crop]
+
+#### 5.2. Sliding window
+[code](https://maslovw.github.io/SDND/VehicleDetection/vehicle_detection.html#Sliding-window)
+
+First I implemented simple sliding window generator without using padding.
+To take different sizes I resize cropped picture 8 times by factor 1.35 (without using 
+original size picture to filter too small windows). 
+
+Sliding window size is 64x64 just like we need for the classificator.
+
+To get all sliding windows features from one cropped pictuer it takes ~5.5 sec! (on my laptop)
+
+![sliding_window][sliding_window]
+
+#### 5.3. Sliding window over HOG
+[Here](https://maslovw.github.io/SDND/VehicleDetection/vehicle_detection.html#Sliding-window-on-HOG) 
+you can find my implementation for HOG sliding window. It's quite simple and probably won't work
+with HOGs with parameter 'cells_per_block' > 1
+
+To be able to filter false-positives, it's recomended to build slide windows with overlapping.
+As one step I take 1 cell, which is 8 pixels. 
+
+So Sliding Window has window size 64x64 with step 8 pixels on x and y
+
+[Code for extracting](https://maslovw.github.io/SDND/VehicleDetection/vehicle_detection.html#calculating-HOG-per-whole-picture,-not-per-single-window)
+all features from one cropped image
+
+![sliding_hog_window][sliding_hog_window]
+
+#### 5.4. Heatmap
+
+Because I build sliding window method in the way that I get overlapping windows, 
+it's recommended to build heatmap: all the pixels of each window increments by 1
+
+![heatmap_svc][heatmap_svc]
+
+#### 5.5. Boundary boxes
+After thresholding heatmap (`heatmap[heatmap<10]') I can build boundary boxes around hot areas,
+using `scipy.ndimage.measurements.label(heatmap)` [code](https://maslovw.github.io/SDND/VehicleDetection/vehicle_detection.html#Boundary-boxes)
+
+![boundary_boxes_svc][boundary_boxes_svc]
+
+### 6. Video pipeline
+
+[Implementation](https://maslovw.github.io/SDND/VehicleDetection/vehicle_detection.html#SVC-pipeline)
+
+To reduce false-positives I use deque(maxlen=10] of thresholded heatmaps, and build stream_heatmap
+
+Boundary boxes are built around thresholded stream_heatmap.
+
+The result of this method can be found [here](https://youtu.be/8hawest3f1U)
+
+It took 38min to build the video. I was not satisfied with result either. It was my best result using
+LinearSVC on HOG
+
+After many tries, I decided to see how much better simple CNN will do.
+
+## 7. CNN classifier
+[Link to CNN classification] (https://maslovw.github.io/SDND/VehicleDetection/vehicle_detection.html#NN-classification)
+#### 7.1. CNN structure
+
+|Layer|Description|params|
+|input|64x64x3 bgr picture||
+|Lambda x: x/127.5-1|Scaling the picture||
+|conv2d|64x64x16|448|
+|maxpool|32x32x16||
+|conv2d|32x32x32|4640|
+|maxpool|16x16x32||
+|conv2d|16x16x48|13872|
+|maxpool|8x8x48||
+|conv2d|8x8x64|27712|
+|maxpool|4x4x64||
+|conv2d|4x4x96|55392|
+|maxpool|2x2x96||
+|dense|512|197120|
+|dense|256|131328|
+|dense|2|514|
+
+Trainable params: 431,026, which is relatively small
+
+Training gave me satisfying result (val_acc ~96%, but val_loss is quite high(20%),
+which can give false-positives, but we already have a mechanism to filter that on a video stream)
+
+#### 7.2 CNN heatmap
+![Heatmap][cnn_heatmap]
+
+#### 7.3 CNN pipeline
+[code](https://maslovw.github.io/SDND/VehicleDetection/vehicle_detection.html#CNN-pipeline)
+
+On my NVIDEA M1000M it takes about 256ms to classify all the sliding windows on cropped image
+
+[Video on youtube](https://youtu.be/4M_emgQmKIE)
 
