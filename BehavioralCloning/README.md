@@ -2,34 +2,6 @@
 
 [![Udacity - Self-Driving Car NanoDegree](https://s3.amazonaws.com/udacity-sdc/github/shield-carnd.svg)](http://www.udacity.com/drive)
 
-Overview
----
-This repository contains starting files for the Behavioral Cloning Project.
-
-In this project, you will use what you've learned about deep neural networks and convolutional neural networks to clone driving behavior. You will train, validate and test a model using Keras. The model will output a steering angle to an autonomous vehicle.
-
-We have provided a simulator where you can steer a car around a track for data collection. You'll use image data and steering angles to train a neural network and then use this model to drive the car autonomously around the track.
-
-We also want you to create a detailed writeup of the project. Check out the [writeup template](https://github.com/udacity/CarND-Behavioral-Cloning-P3/blob/master/writeup_template.md) for this project and use it as a starting point for creating your own writeup. The writeup can be either a markdown file or a pdf document.
-
-To meet specifications, the project will require submitting five files: 
-* model.py (script used to create and train the model)
-* drive.py (script to drive the car - feel free to modify this file)
-* model.h5 (a trained Keras model)
-* a report writeup file (either markdown or pdf)
-* video.mp4 (a video recording of your vehicle driving autonomously around the track for at least one full lap)
-
-This README file describes how to output the video in the "Details About Files In This Directory" section.
-
-Creating a Great Writeup
----
-A great writeup should include the [rubric points](https://review.udacity.com/#!/rubrics/432/view) as well as your description of how you addressed each point.  You should include a detailed description of the code used (with line-number references and code snippets where necessary), and links to other supporting documents or external references.  You should include images in your writeup to demonstrate how your code works with examples.  
-
-All that said, please be concise!  We're not looking for you to write a book here, just a brief description of how you passed each rubric point, and references to the relevant code :). 
-
-You're not required to use markdown for your writeup.  If you use another method please just submit a pdf of your writeup.
-
-The Project
 ---
 The goals / steps of this project are the following:
 * Use the simulator to collect data of good driving behavior 
@@ -49,13 +21,129 @@ The following resources can be found in this github repository:
 * video.py
 * writeup_template.md
 
-The simulator can be downloaded from the classroom. In the classroom, we have also provided sample data that you can optionally use to help train your model.
+## How it works
+
+I tryed many different CNN models (including  pretrained 
+[ResNet50](https://github.com/maslovw/SDND/blob/master/BehavioralCloning/ResNet50.ipynb)).
+But the best was the CNN introduced by NVIDIA ([link](https://devblogs.nvidia.com/parallelforall/deep-learning-self-driving-cars))
+
+
+[//]: # (Image References)
+[model]: ./images/nvidia_model.png
+[video]: ./images/VideoYouTube.png
+
+### Dataset
+I checked the dataset provided by Udacity, but I quickly realized that values of steering wheel are
+not normally distributed as I would expect to see. It has to many zeros inside. So I tryed to record
+my own data, changing the angle of a steering wheel with my mouse (I don't have joystick :( )
+
+But at the end, I gave up and used initial Udacity dataset.
+I used all three cameras making offset for side cameras - 0,2. I got 24,108 entries, which I also flipped 
+vertically to make it harder for overfitting. 
+
+
+### Model
+On this data I tryed to train NN: 
+```
+input_5             : (160, 320, 1)
+cropping2d_5        : (80, 320, 1)
+lambda_5            : (80, 320, 1)
+conv2d_24           : (80, 160, 32)
+activation_19       : (80, 160, 32)
+dropout_13          : (80, 160, 32)
+max_pooling2d_19    : (80, 80, 32)
+conv2d_25           : (80, 80, 48)
+activation_20       : (80, 80, 48)
+max_pooling2d_20    : (40, 40, 48)
+conv2d_26           : (40, 40, 64)
+activation_21       : (40, 40, 64)
+dropout_14          : (40, 40, 64)
+max_pooling2d_21    : (20, 20, 64)
+conv2d_27           : (20, 20, 128)
+activation_22       : (20, 20, 128)
+max_pooling2d_22    : (10, 10, 128)
+conv2d_28           : (8, 8, 256)
+activation_23       : (8, 8, 256)
+max_pooling2d_23    : (4, 4, 256)
+flatten_5           : (4096,)
+dense_17            : (256,)
+dense_18            : (512,)
+dense_19            : (1024,)
+dropout_15          : (1024,)
+dense_20            : (1,)
+```
+
+the best result was `loss: 0.1308 - val_loss: 0.0187` after 16 epoch and the car was making 
+nearly succesful attempts to stay on the track..
+
+#### NVIDIA end-to-end
+After many tryes, I decided to go with NVidia end-to-end approach, and I built something like:
+
+![nvidia-model][model]
+`Total params: 981,819`
+
+I used initial Udacity dataset.
+
+And it worked! After only 2 epochs I got better loss results, and the car was actually driving 
+through the track.
+
+But I forgot to put activation function on the last Dense layers 
+
+```
+    model.add(Flatten())
+    model.add(Dense(100))
+    model.add(Dense(50))
+    model.add(Dense(10))
+    model.add(Dense(1))
+```
+My colleague pointed on that, and said that if this works, then I should try to reduce
+the Dense layers completely.
+
+At the end, I've got the same result with model: 
+```
+_________________________________________________________________
+Layer (type)                 Output Shape              Param #   
+=================================================================
+lambda_1 (Lambda)            (None, 160, 320, 3)       0         
+_________________________________________________________________
+cropping2d_1 (Cropping2D)    (None, 90, 320, 3)        0         
+_________________________________________________________________
+conv2d_1 (Conv2D)            (None, 43, 158, 24)       1824      
+_________________________________________________________________
+conv2d_2 (Conv2D)            (None, 20, 77, 36)        21636     
+_________________________________________________________________
+conv2d_3 (Conv2D)            (None, 8, 37, 48)         43248     
+_________________________________________________________________
+conv2d_4 (Conv2D)            (None, 6, 35, 64)         27712     
+_________________________________________________________________
+conv2d_5 (Conv2D)            (None, 4, 33, 64)         36928     
+_________________________________________________________________
+flatten_1 (Flatten)          (None, 8448)              0         
+_________________________________________________________________
+dense_1 (Dense)              (None, 1)                 8449      
+=================================================================
+Total params: 139,797
+Trainable params: 139,797
+Non-trainable params: 0
+_________________________________________________________________
+
+Epoch 2/2
+115s - loss: 0.0130 - val_loss: 0.0198
+
+```
+Which is 7 times smaller than the dataset with Dense layers, and drives the same.
+
+Here's the final notebook of training CNN (https://maslovw.github.io/SDND/BehaviorCloning/BehaviorCloning.html)
+
+![Video][video](https://youtu.be/ZUaHttB-yYE)
+
 
 ## Details About Files In This Directory
 
 ### `drive.py`
 
-Usage of `drive.py` requires you have saved the trained model as an h5 file, i.e. `model.h5`. See the [Keras documentation](https://keras.io/getting-started/faq/#how-can-i-save-a-keras-model) for how to create this file using the following command:
+Usage of `drive.py` requires you have saved the trained model as an h5 file, i.e. `model.h5`.
+See the [Keras documentation](https://keras.io/getting-started/faq/#how-can-i-save-a-keras-model) for how to create this file using the following command:
 ```sh
 model.save(filepath)
 ```
@@ -112,7 +200,4 @@ python video.py run1 --fps 48
 
 Will run the video at 48 FPS. The default FPS is 60.
 
-#### Why create a video
 
-1. It's been noted the simulator might perform differently based on the hardware. So if your model drives succesfully on your machine it might not on another machine (your reviewer). Saving a video is a solid backup in case this happens.
-2. You could slightly alter the code in `drive.py` and/or `video.py` to create a video of what your model sees after the image is processed (may be helpful for debugging).
