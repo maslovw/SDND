@@ -80,6 +80,7 @@ nearly succesful attempts to stay on the track..
 After many tryes, I decided to go with NVidia end-to-end approach, and I built something like:
 
 ![nvidia-model][model]
+
 `Total params: 981,819`
 
 I used initial Udacity dataset.
@@ -131,12 +132,13 @@ Epoch 2/2
 115s - loss: 0.0130 - val_loss: 0.0198
 
 ```
-Which is 7 times smaller than the dataset with Dense layers, and drives the same.
+Which is 7 times smaller than the dataset with Dense layers, and it behaves the same.
 
 Here's the final notebook of training CNN (https://maslovw.github.io/SDND/BehaviorCloning/BehaviorCloning.html)
 
-![Video][video](https://youtu.be/ZUaHttB-yYE)
+[![Video][video]](https://youtu.be/ZUaHttB-yYE)
 
+the Model file is: https://github.com/maslovw/SDND/blob/master/BehavioralCloning/models/modelNv02.h5
 
 ## Details About Files In This Directory
 
@@ -161,13 +163,13 @@ Note: There is known local system's setting issue with replacing "," with "." wh
 #### Saving a video of the autonomous agent
 
 ```sh
-python drive.py model.h5 run1
+python drive.py ./models/modelNv02.h5 imgs
 ```
 
-The fourth argument, `run1`, is the directory in which to save the images seen by the agent. If the directory already exists, it'll be overwritten.
+The fourth argument, `imgs`, is the directory in which to save the images seen by the agent. If the directory already exists, it'll be overwritten.
 
 ```sh
-ls run1
+ls imgs
 
 [2017-01-09 16:10:23 EST]  12KiB 2017_01_09_21_10_23_424.jpg
 [2017-01-09 16:10:23 EST]  12KiB 2017_01_09_21_10_23_451.jpg
