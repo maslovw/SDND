@@ -3,7 +3,7 @@
 [![Udacity - Self-Driving Car NanoDegree](https://s3.amazonaws.com/udacity-sdc/github/shield-carnd.svg)](http://www.udacity.com/drive)
 
 ---
-The goals / steps of this project are the following:
+The goals/steps of this project are the following:
 * Use the simulator to collect data of good driving behavior 
 * Design, train and validate a model that predicts a steering angle from image data
 * Use the model to drive the vehicle autonomously around the first track in the simulator. The vehicle should remain on the road for an entire loop around the track.
@@ -14,16 +14,16 @@ This lab requires:
 
 * [CarND Term1 Starter Kit](https://github.com/udacity/CarND-Term1-Starter-Kit)
 
-The lab enviroment can be created with CarND Term1 Starter Kit. Click [here](https://github.com/udacity/CarND-Term1-Starter-Kit/blob/master/README.md) for the details.
+The lab environment can be created with CarND Term1 Starter Kit. Click [here](https://github.com/udacity/CarND-Term1-Starter-Kit/blob/master/README.md) for the details.
 
-The following resources can be found in this github repository:
+The following resources can be found in this GitHub repository:
 * drive.py
 * video.py
 * writeup_template.md
 
 ## How it works
 
-I tryed many different CNN models (including  pretrained 
+I tried many different CNN models (including  trained 
 [ResNet50](https://github.com/maslovw/SDND/blob/master/BehavioralCloning/ResNet50.ipynb)).
 But the best was the CNN introduced by NVIDIA ([link](https://devblogs.nvidia.com/parallelforall/deep-learning-self-driving-cars))
 
@@ -35,8 +35,8 @@ But the best was the CNN introduced by NVIDIA ([link](https://devblogs.nvidia.co
 [data_sample2]: ./images/data_sample2.png
 
 ### Dataset
-I checked the dataset provided by Udacity, but I quickly realized that values of steering wheel are
-not normally distributed as I would expect to see. It has to many zeros inside. So I tryed to record
+I checked the dataset provided by Udacity, but I quickly realized that values of the steering wheel are
+not normally distributed as I would expect to see. It has too many zeros inside. So I tried to record
 my own data, changing the angle of a steering wheel with my mouse (I don't have joystick :( )
 
 But at the end, I gave up and used initial Udacity dataset.
@@ -49,7 +49,7 @@ Examples of data with used cropping:
 
 ![data_sample][data_sample2]
 
-Note: I tryed data augmentation and redistribution (can be observed in the BehaviorCloning.ipynb). 
+Note: I tried data augmentation and redistribution (can be observed in the BehaviorCloning.ipynb). 
 
 ### Model
 On this data I tryed to train NN: 
@@ -83,7 +83,7 @@ dense_20            : (1,)
 ```
 
 the best result was `loss: 0.1308 - val_loss: 0.0187` after 16 epoch and the car was making 
-nearly succesful attempts to stay on the track..
+nearly successful attempts to stay on the track..
 
 #### NVIDIA end-to-end
 After many tryes, I decided to go with NVidia end-to-end approach, and I built this model:
@@ -125,6 +125,20 @@ I used initial Udacity dataset.
 
 And it worked! After only 2 epochs I got better loss results, and the car was actually driving 
 through the track.
+
+The model was trained with Adam optimizer. 
+default Keras parameters: 
+
+`keras.optimizers.Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)`
+
+I tried SGD (Stochastic gradient descent optimizer), but adam showed a better result.
+I tried to decrease learning rate depending on validation loss (in this notebook https://github.com/maslovw/SDND/blob/master/BehavioralCloning/BehaviorCloning.ipynb), but it didn't increase quality of training, 
+in fact, it made it worse. 
+
+Keras callback function 
+`ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=5, min_lr=0.00001, verbose=2)` was used
+
+To calculate loss I used MeanSquaredError(mse) function.
 
 But I forgot to put activation function on the last Dense layers 
 
@@ -239,7 +253,7 @@ The image file name is a timestamp of when the image was seen. This information 
 python video.py run1
 ```
 
-Creates a video based on images found in the `run1` directory. The name of the video will be the name of the directory followed by `'.mp4'`, so, in this case the video will be `run1.mp4`.
+Creates a video based on images found in the `run1` directory. The name of the video will be the name of the directory followed by `'.mp4'`, so, in this case, the video will be `run1.mp4`.
 
 Optionally, one can specify the FPS (frames per second) of the video:
 
@@ -248,5 +262,3 @@ python video.py run1 --fps 48
 ```
 
 Will run the video at 48 FPS. The default FPS is 60.
-
-
