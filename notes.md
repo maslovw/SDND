@@ -20,3 +20,8 @@ https://github.com/allanzelener/YAD2K
 worth looking at 
 
 https://github.com/experiencor/basic-yolo-keras
+
+## NN
+
+Batch normalization
+https://arxiv.org/pdf/1502.03167.pdf
