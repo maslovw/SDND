@@ -31,6 +31,8 @@ But the best was the CNN introduced by NVIDIA ([link](https://devblogs.nvidia.co
 [//]: # (Image References)
 [model]: ./images/nvidia_model.png
 [video]: ./images/VideoYouTube.png
+[data_sample]: ./images/data_sample.png
+[data_sample2]: ./images/data_sample2.png
 
 ### Dataset
 I checked the dataset provided by Udacity, but I quickly realized that values of steering wheel are
@@ -41,6 +43,11 @@ But at the end, I gave up and used initial Udacity dataset.
 I used all three cameras making offset for side cameras - 0,2. I got 24,108 entries, which I also flipped 
 vertically to make it harder for overfitting. 
 
+Examples of data with used cropping:
+
+![data_sample][data_sample]
+
+![data_sample][data_sample2]
 
 ### Model
 On this data I tryed to train NN: 
