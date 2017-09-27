@@ -70,10 +70,10 @@ readAllImgs(log, data_path)
 # ## Building model
 def buildModel():
     model = Sequential()
-    # normalize data
-    model.add(Lambda(lambda x: (x / 255.0) - 0.5, input_shape=(160,320,3)))
     # crop road part
-    model.add(Cropping2D(cropping=((50,20), (0,0))))
+    model.add(Cropping2D(cropping=((50,20), (0,0)), input_shape=(160,320,3)))
+    # normalize data
+    model.add(Lambda(lambda x: (x / 255.0) - 0.5))
     # CNN (ref: NVIDIA End-to-end model)
     model.add(Conv2D(24, (5,5), strides=(2,2), activation='relu'))
     model.add(Conv2D(36, (5,5), strides=(2,2), activation='relu'))
