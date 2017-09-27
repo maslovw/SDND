@@ -49,6 +49,8 @@ Examples of data with used cropping:
 
 ![data_sample][data_sample2]
 
+Note: I tryed data augmentation and redistribution (can be observed in the BehaviorCloning.ipynb). 
+
 ### Model
 On this data I tryed to train NN: 
 ```
