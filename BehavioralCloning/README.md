@@ -198,6 +198,7 @@ Which is 7 times smaller than the dataset with Dense layers, and it behaves the 
 Here's the final notebook of training CNN (https://maslovw.github.io/SDND/BehaviorCloning/BehaviorCloning.html)
 
 [![Video][video]](https://youtu.be/ZUaHttB-yYE)
+Video https://youtu.be/ZUaHttB-yYE
 
 the Model file is: https://github.com/maslovw/SDND/blob/master/BehavioralCloning/models/modelNv02.h5
 
