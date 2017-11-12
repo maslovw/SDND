@@ -25,3 +25,8 @@ https://github.com/experiencor/basic-yolo-keras
 
 Batch normalization
 https://arxiv.org/pdf/1502.03167.pdf
+
+## PID
+P - https://www.youtube.com/watch?v=27lMKi2inpk
+I - https://www.youtube.com/watch?v=5CncRd8O2r4&t=174s
+D - https://www.youtube.com/watch?v=d_LuA-SwWQE
