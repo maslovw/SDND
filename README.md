@@ -2,7 +2,7 @@
 [![Udacity - Self-Driving Car NanoDegree](https://s3.amazonaws.com/udacity-sdc/github/shield-carnd.svg)](http://www.udacity.com/drive)
 
 ## Project **Finding Lane Lines on the Road** 
-https://github.com/maslovw/SDND/tree/master/FindingLanes
+https://github.com/maslovw/SDND/tree/master/T1.Computer_vision_and_deep_learning/FindingLanes
 <img src="FindingLanes/test_images_output/challenge01.jpg" width="480" alt="Combined Image" />
 ### Overview
 When we drive, we use our eyes to decide where to go. 
@@ -14,8 +14,8 @@ self-driving car is to automatically detect lane lines using an algorithm.
 In this project we will detect lane lines in images using Python3 and [OpenCV](http://opencv.org/).
 
 ## Project **Traffic Sign Recognition**
-https://github.com/maslovw/SDND/tree/master/TrafficSignlassifier
-<img src = "https://github.com/maslovw/SDND/blob/master/TrafficSignlassifier/misc/training_set_visualisation.png" alt="training set" />
+https://github.com/maslovw/SDND/tree/master/T1.Computer_vision_and_deep_learning/TrafficSignlassifier
+<img src = "https://github.com/maslovw/SDND/blob/master/T1.Computer_vision_and_deep_learning/TrafficSignlassifier/misc/training_set_visualisation.png" alt="training set" />
 ### Overview
 The goal of the project is to create a classificator for the German traffic sign data set.
 
@@ -26,13 +26,13 @@ In this project I tryed different classification models using Keras:
 * Multi-column DNN
 
 ## Project **Advance Lane Lines on the Road** 
-https://github.com/maslovw/SDND/tree/master/Advanced-Lane-Lines
+https://github.com/maslovw/SDND/tree/master/T1.Computer_vision_and_deep_learning/Advanced-Lane-Lines
 <img src="Advanced-Lane-Lines/output_images/img4.jpg" width="480" alt="Combined Image" />
 
 
 
 ## Project Vehicle Detection
-https://github.com/maslovw/SDND/tree/master/VehicleDetection
+https://github.com/maslovw/SDND/tree/master/T1.Computer_vision_and_deep_learning/VehicleDetection
 
 
 <img src="VehicleDetection/images/hog_example.png" width="480" alt="Combined Image" />
@@ -55,7 +55,7 @@ a labeled training set of images and train a classifier Linear SVM classifier
 
 
 ## Project Behavior Cloning
-https://github.com/maslovw/SDND/tree/master/BehavioralCloning
+https://github.com/maslovw/SDND/tree/master/T1.Computer_vision_and_deep_learning/BehavioralCloning
 
 <img src="BehavioralCloning/images/VideoYouTube.png" width="480" alt="Combined Image" />
 
