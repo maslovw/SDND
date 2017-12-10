@@ -3,7 +3,7 @@
 
 ## Project **Finding Lane Lines on the Road** 
 https://github.com/maslovw/SDND/tree/master/T1.Computer_vision_and_deep_learning/FindingLanes
-<img src="FindingLanes/test_images_output/challenge01.jpg" width="480" alt="Combined Image" />
+<img src="T1.Computer_vision_and_deep_learning/FindingLanes/test_images_output/challenge01.jpg" width="480" alt="Combined Image" />
 ### Overview
 When we drive, we use our eyes to decide where to go. 
 The lines on the road that show us where the lanes are act as our constant 
