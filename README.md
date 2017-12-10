@@ -27,17 +27,29 @@ In this project I tryed different classification models using Keras:
 
 ## Project **Advance Lane Lines on the Road** 
 https://github.com/maslovw/SDND/tree/master/T1.Computer_vision_and_deep_learning/Advanced-Lane-Lines
-<img src="Advanced-Lane-Lines/output_images/img4.jpg" width="480" alt="Combined Image" />
+<img src="T1.Computer_vision_and_deep_learning/Advanced-Lane-Lines/output_images/img4.jpg" width="480" alt="Combined Image" />
 
 
+
+## Project Behavior Cloning
+https://github.com/maslovw/SDND/tree/master/T1.Computer_vision_and_deep_learning/BehavioralCloning
+
+<img src="T1.Computer_vision_and_deep_learning/BehavioralCloning/images/VideoYouTube.png" width="480" alt="Combined Image" />
+
+The goals / steps of this project are the following:
+
+* Use the simulator to collect data of good driving behavior
+* Design, train and validate a model that predicts a steering angle from image data
+* Use the model to drive the vehicle autonomously around the first track in the simulator. The vehicle should remain on the road for an entire loop around the track.
+* Summarize the results with a written report
 
 ## Project Vehicle Detection
 https://github.com/maslovw/SDND/tree/master/T1.Computer_vision_and_deep_learning/VehicleDetection
 
 
-<img src="VehicleDetection/images/hog_example.png" width="480" alt="Combined Image" />
+<img src="T1.Computer_vision_and_deep_learning/VehicleDetection/images/hog_example.png" width="480" alt="Combined Image" />
 
-<img src="VehicleDetection/images/svc_output.png" width="480" alt="Combined Image" />
+<img src="T1.Computer_vision_and_deep_learning/VehicleDetection/images/svc_output.png" width="480" alt="Combined Image" />
 
 The goals/steps of this project are the following:
 
@@ -52,16 +64,3 @@ a labeled training set of images and train a classifier Linear SVM classifier
  implement on full project_video.mp4) and create a heat map of recurring detections frame
  by frame to reject outliers and follow detected vehicles.
 * Estimate a bounding box for vehicles detected.
-
-
-## Project Behavior Cloning
-https://github.com/maslovw/SDND/tree/master/T1.Computer_vision_and_deep_learning/BehavioralCloning
-
-<img src="BehavioralCloning/images/VideoYouTube.png" width="480" alt="Combined Image" />
-
-The goals / steps of this project are the following:
-
-* Use the simulator to collect data of good driving behavior
-* Design, train and validate a model that predicts a steering angle from image data
-* Use the model to drive the vehicle autonomously around the first track in the simulator. The vehicle should remain on the road for an entire loop around the track.
-* Summarize the results with a written report
