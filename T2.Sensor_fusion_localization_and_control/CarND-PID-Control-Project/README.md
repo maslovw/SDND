@@ -4,11 +4,11 @@ Self-Driving Car Engineer Nanodegree Program
 ---
 ## Choise of the PID weights
 
-To understand how each weight make a change I used this gif from wiki:
+To understand how each weight make a change I used this gif from [wiki](https://en.wikipedia.org/wiki/PID_controller):
 
 <img src="video/PID_Compensation_Animated.gif" width="480" alt="Combined Image" />
 
-Increesing `P` helped to turn propperly, to high `P` causes to sharp turns, too low causes too slow turns.
+Increesing `P` helped to turn propperly, too high `P` causes sharp turns, too low - causes too slow turns.
 
 `I` helps to make it P more precise, but it also increeses oscilation (car drives with waves)
 
