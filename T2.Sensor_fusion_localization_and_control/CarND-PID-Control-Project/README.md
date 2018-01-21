@@ -2,6 +2,35 @@
 Self-Driving Car Engineer Nanodegree Program
 
 ---
+## Choise of the PID weights
+
+To understand how each weight make a change I used this gif from wiki:
+
+<img src="video/PID_Compensation_Animated.gif" width="480" alt="Combined Image" />
+
+Increesing `P` helped to turn propperly, to high `P` causes to sharp turns, too low causes too slow turns.
+
+`I` helps to make it P more precise, but it also increeses oscilation (car drives with waves)
+
+`D` helps to reduce those waves, basically it resists for changes, caused by `P`
+
+```
+Kp = 0.179
+Ki = 0.00035
+Kd = 9.75
+```
+I didn't try any method except change&try :) after ~10 itterations I got desired result, after which I
+started to play with speed control.
+
+## Speed control
+
+I tried to control speed, using same PID class, just with different parameters. 
+
+The desired speed (setpoint) depends on the calculated steering angle, higher angel - lower speed.
+This helped to increese speed up to 80. I tried more, but result depends on the CPU in this case, had to 
+lower the simulator resolution, switch off debugging `cout` messages, and even then result would differ if I 
+record screen video. So I decided to lower max speed to 80. It works better (at least on my laptop)
+
 
 ## Dependencies
 
