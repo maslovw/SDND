@@ -3,6 +3,8 @@
 #include "json.hpp"
 #include "PID.h"
 #include <math.h>
+#include <algorithm>
+#include "stdio.h"
 
 // for convenience
 using json = nlohmann::json;
@@ -35,14 +37,13 @@ int main()
   PID pid;
   PID speed_pid;
   // TODO: Initialize the pid variable.
-  double Kp = 0.18;  // Proportional
-  // Don't have systematic bias, so no need to compensate.
-  double Ki = 0.0005;  // Integral
-  double Kd = 3.0;  // Differential
+  double Kp = 0.179;  // Proportional
+  double Ki = 0.00035;  // Integral
+  double Kd = 9.75;  // Differential
 
   pid.Init(Kp, Ki, Kd);
 
-  speed_pid.Init(0.1, 0.002, 3.9);
+  speed_pid.Init(0.3, 0.0003, 0.2);
 
   h.onMessage([&pid, &speed_pid](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
@@ -58,7 +59,7 @@ int main()
           // j[1] is the data JSON object
           double cte = std::stod(j[1]["cte"].get<std::string>());
           double speed = std::stod(j[1]["speed"].get<std::string>());
-          double angle = std::stod(j[1]["steering_angle"].get<std::string>());
+          // double angle = std::stod(j[1]["steering_angle"].get<std::string>());
           double steer_value;
           /*
           * TODO: Calcuate steering value here, remember the steering value is
@@ -70,23 +71,26 @@ int main()
           pid.UpdateError(cte);
           steer_value = pid.TotalError();
 
-          
+          // max speed = range(5, 90)
+          // koef 70 was chosen to slow down to 10, if steer_value is 1
+          // here, steer can be more than one, and to not drive backword or stop
+          // I use max(max_speed, 5)
+          double max_speed = std::max((80. - abs(steer_value*70)), 5.);
+
           // Ensuring the maximum values are never surpassed.
           if(steer_value > 1.0) 
             steer_value = 1.0;
           else if(steer_value < -1.0) 
             steer_value = -1.0;
 
-          const double max_speed = 60- abs(steer_value*40);
           double speed_error = max_speed - speed;
           speed_pid.UpdateError(speed_error);
           speed = - speed_pid.TotalError();
 
           // DEBUG
-          std::cout << "CTE: " << cte << " Steering Value: " << steer_value << " Speed: " << speed << " max "<< max_speed << std::endl;
+          // printf("CTE: %6.2f, Steering: %6.2f, speed: %6.2f, max speed: %6.2f\n", cte, steer_value, speed, max_speed);
           // DEBUG
-          // std::cout << "CTE: " << cte << " Steering Value: " << steer_value << std::endl;
-          std::cout << "p " << pid.p_error << ", i " << pid.i_error << ", d " << pid.d_error << std::endl;
+          // printf("p: %6.2f, i: %6.2f, d: %6.2f\n", pid.p_error, pid.i_error, pid.d_error);
 
           json msgJson;
           msgJson["steering_angle"] = steer_value;
