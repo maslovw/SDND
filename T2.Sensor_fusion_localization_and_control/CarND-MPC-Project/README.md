@@ -6,12 +6,10 @@ Self-Driving Car Engineer Nanodegree Program
 
 The [MPC](https://en.wikipedia.org/wiki/Model_predictive_control) is an advanced control technique
 for complex control problems.
-MPC is an optmization problem to find the best set of control inputs that minimizes the cost
-functions based on the prediction (dynamical) model.
 
 ### Prediction Horizon
 
-Prediction Horizon is relatively short time duration over which future predictions are made.
+Prediction Horizon is a relatively short time span, over which future predictions are made.
 It comprehend the number of timesteps `N` in the horizon and the time elapse of each timestep `dt`.
 
 The number `N` also determines the number of variables optmized by the controller.
@@ -19,7 +17,7 @@ So, higher `N` will result in extra computational cost.
 
 For this project, we followed an empirical approach of trial and error to choose the horizon values.
 For ``N`` I tried values between 10 and 20 and for dt 0.05 and 0.1.
-``dt`` must be in sync with the system latency, which is 100ms in this case.
+``dt`` must be in sync with the system latency, which is 100ms.
 
 ### Model
 
@@ -38,11 +36,15 @@ The followind equations updates the prediction model at every timestep:
 ![equation](http://latex.codecogs.com/gif.latex?e%5Cpsi%20_%28t&plus;1%29%20%3D%20%5Cpsi%20_t%20-%20%5Cpsi%20dest%20&plus;%20%5Cfrac%7Bv_f%7D%7BL_f%7D%20*%20%5Cdelta_t%20*%20dt)
 
 
-``Lf`` measures the distance between the front of the vehicle and its center of gravity. ``f(x)`` is the evaluation of the polynomial ``f`` at point x and ``psidest`` is the tangencial angle of the polynomial ``f`` evaluated at x.
+``Lf`` measures the distance between the front of the vehicle and its center of gravity. 
+
+``f(x)`` is the evaluation of the polynomial ``f`` at point x 
+and ``psidest`` is the tangencial angle of the polynomial ``f`` evaluated at x.
 
 ### Polynomial Fitting and MPC Preprocessing
 
-Before fitting the path returned from the simulator, we have to preprocess in order to move the points to the origin (x=0, y=0) and also rotate the path to follow the car orientation.
+Before fitting the path returned from the simulator, 
+we have to preprocess in order to move the points to the origin (x=0, y=0) and also rotate the path to follow the car orientation.
 
 ```c
 for(size_t i = 0UL; i < ptsx.size(); i++){
@@ -57,7 +59,7 @@ for(size_t i = 0UL; i < ptsx.size(); i++){
 }
 ```
 
-After preprocessing, the polynomial is fitted using the helper function ``polyfit`` (file main.cpp at line 134).
+After preprocessing, the polynomial is fitted using the helper function ``polyfit``.
 
 ### Constraints
 
