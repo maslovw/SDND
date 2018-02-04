@@ -2,6 +2,88 @@
 Self-Driving Car Engineer Nanodegree Program
 
 ---
+## Model Predictive Control (MPC)
+
+The [MPC](https://en.wikipedia.org/wiki/Model_predictive_control) is an advanced control technique
+for complex control problems.
+MPC is an optmization problem to find the best set of control inputs that minimizes the cost
+functions based on the prediction (dynamical) model.
+
+### Prediction Horizon
+
+Prediction Horizon is relatively short time duration over which future predictions are made.
+It comprehend the number of timesteps `N` in the horizon and the time elapse of each timestep `dt`.
+
+The number `N` also determines the number of variables optmized by the controller.
+So, higher `N` will result in extra computational cost.
+
+For this project, we followed an empirical approach of trial and error to choose the horizon values.
+For ``N`` I tried values between 10 and 20 and for dt 0.05 and 0.1.
+``dt`` must be in sync with the system latency, which is 100ms in this case.
+
+### Model
+
+The followind equations updates the prediction model at every timestep:
+
+![equation](http://latex.codecogs.com/gif.latex?x_%28t&plus;1%29%20%3D%20x_t%20&plus;%20v_t%20*%20cos%28%5Cpsi_t%29*dt)
+
+![equation](http://latex.codecogs.com/gif.latex?y_%28t&plus;1%29%20%3D%20y_t%20&plus;%20v_t%20*%20sin%28%5Cpsi_t%29*dt)
+
+![equation](http://latex.codecogs.com/gif.latex?%5Cpsi%20_%28t&plus;1%29%20%3D%20%5Cpsi%20_t%20&plus;%20%5Cfrac%7Bv_t%7D%7BL_f%7D*%20%5Cdelta_t%20*%20dt)
+
+![equation](http://latex.codecogs.com/gif.latex?v_%28t&plus;1%29%20%3D%20v%20_t%20&plus;%20a_t%20*%20dt)
+
+![equation](http://latex.codecogs.com/gif.latex?cte_%28t&plus;1%29%20%3D%20f%28x_t%29%20-%20y_t%20&plus;%20v%20_t%20*%20sin%28e%5Cpsi%20_t%29%20*%20dt)
+
+![equation](http://latex.codecogs.com/gif.latex?e%5Cpsi%20_%28t&plus;1%29%20%3D%20%5Cpsi%20_t%20-%20%5Cpsi%20dest%20&plus;%20%5Cfrac%7Bv_f%7D%7BL_f%7D%20*%20%5Cdelta_t%20*%20dt)
+
+
+``Lf`` measures the distance between the front of the vehicle and its center of gravity. ``f(x)`` is the evaluation of the polynomial ``f`` at point x and ``psidest`` is the tangencial angle of the polynomial ``f`` evaluated at x.
+
+### Polynomial Fitting and MPC Preprocessing
+
+Before fitting the path returned from the simulator, we have to preprocess in order to move the points to the origin (x=0, y=0) and also rotate the path to follow the car orientation.
+
+```c
+for(size_t i = 0UL; i < ptsx.size(); i++){
+	//shift points to the initial point
+	double shift_x = ptsx[i] -px;
+	double shift_y = ptsy[i] -py;
+
+	//rotate 90 degrees
+	//http://planning.cs.uiuc.edu/node99.html
+	ptsx[i] = (shift_x * cos(0-psi) - shift_y*sin(0-psi));
+	ptsy[i] = (shift_x * sin(0-psi) + shift_y*cos(0-psi));
+}
+```
+
+After preprocessing, the polynomial is fitted using the helper function ``polyfit`` (file main.cpp at line 134).
+
+### Constraints
+
+The actuators constraints limits the upper and lower bounds of the steering angle and throttle acceleration/brake.
+
+![equation](http://latex.codecogs.com/gif.latex?%5Cdelta%20%5Cepsilon%20%5B-25%5E%7B%5Ccirc%7D%2C%2025%5E%7B%5Ccirc%7D%5D)
+
+![equation](http://latex.codecogs.com/gif.latex?a%20%5Cepsilon%20%5B-1%2C%201%5D)
+
+The MPC cost captures the error to be minimized. The const function requires the model to predict where the vehicle will go into the future in order to compute the difference where the vehicle should be and where the model predicted.
+
+![equation](http://latex.codecogs.com/gif.latex?J%20%3D%20%5Csum%5E%7BN%7D_%7Bt%3D1%7D%5B%28cte_t%20-%20cte_%7Bref%7D%29%5E2%20&plus;%20%28e%5Cpsi_t%20-%20e%5Cpsi_%7Bref%7D%29%5E2%20&plus;%20...%5D)
+
+### Latency
+
+In order to deal with the latency, we have to predict the next state before calling the MPC solver. It can be acoomplished using the Model equations. Below, the pseudocode to predict the next state.
+
+```c
+dt = 0.1;
+x1    = v * cos(0) * dt;
+y1    = v * sin(0) * dt;
+psi1  = - v/Lf * steer_value * dt;
+v1    = throttle_value * dt;
+cte1  =   v * sin(epsi1) * dt;
+epsi1 = - v * steer_value / Lf * dt;
+```
 
 ## Dependencies
 
