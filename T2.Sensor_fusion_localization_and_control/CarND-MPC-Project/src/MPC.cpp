@@ -20,14 +20,10 @@ double dt = .1;
 //
 // This is the length from front to CoG that has a similar radius.
 const double Lf = 2.67;
+const double v_ref = 80;
 
-//Costs
 
-//Reference
 
-const double cte_ref = 0;
-const double epsi_ref = 0;
-const double v_ref = 40;
 
 const size_t x_start = 0;
 const size_t y_start = x_start + N;
@@ -42,12 +38,12 @@ class FG_eval {
  public:
 	// Fitted polynomial coefficients
 	Eigen::VectorXd coeffs;
-  const int cte_cost = 15;
-  const int epsi_cost = 15;
-  const int v_cost = 1;
-  const int delta_cost = 5;
-  const int a_cost = 1;
-  const int delta_d_cost = 1000;
+  const int cte_cost = 10000;
+  const int epsi_cost = 10000;
+  const int v_cost = 5;
+  const int delta_cost = 250;
+  const int a_cost = 50;
+  const int delta_d_cost = 5;
   const int delta_a_cost = 5;
 
 	FG_eval(Eigen::VectorXd coeffs) {
@@ -60,22 +56,26 @@ class FG_eval {
 		//  Calculate Costs
 		fg[0] = 0;
 
-		for (auto i = 0UL; i < N; i++) {
-			fg[0] += cte_cost * CppAD::pow(vars[cte_start + i] - cte_ref, 2);
-			fg[0] += epsi_cost * CppAD::pow(vars[epsi_start + i] - epsi_ref, 2);
-			fg[0] += v_cost * CppAD::pow(vars[v_start + i] - v_ref, 2);
+		//Cost related to the reference state.
+		for (unsigned int t = 0; t < N; t++) {
+			fg[0] += cte_cost * CppAD::pow(vars[cte_start + t], 2);
+			fg[0] += epsi_cost * CppAD::pow(vars[epsi_start + t], 2);
+			fg[0] += v_cost * CppAD::pow(vars[v_start + t] - v_ref, 2);
 		}
 
-		for (auto i = 0UL; i < N - 1; i++) {
-			fg[0] += delta_cost * CppAD::pow(vars[delta_start + i], 2);
-			fg[0] += a_cost * CppAD::pow(vars[a_start + i], 2);
+		//Minimize the use of actuators.
+		for (unsigned int t = 0; t < N - 1; t++) {
+			fg[0] += delta_cost
+					* CppAD::pow(
+							(vars[delta_start + t] / (0.436332 * Lf)) * vars[a_start + t], 2);
+			fg[0] += a_cost * CppAD::pow(vars[delta_start + t], 2);
 		}
 
-		for (auto i = 0UL; i < N - 2; i++) {
-			fg[0] += delta_d_cost
-					* CppAD::pow(vars[delta_start + i + 1] - vars[delta_start + i], 2);
-			fg[0] += delta_a_cost
-					* CppAD::pow(vars[a_start + i + 1] - vars[a_start + i], 2);
+		//Minimize the value gap between sequential actuations.
+		for (unsigned int t = 0; t < N - 2; t++) {
+			fg[0] += /*5*/delta_d_cost
+					* CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
+			fg[0] += /*5*/delta_a_cost * CppAD::pow(vars[a_start + t + 1] - vars[a_start + t], 2);
 		}
 
 		//Initial Constraints (Pulled from Lesson 19)
@@ -115,16 +115,15 @@ class FG_eval {
 
 			fg[1 + x_start + t] = x1 - (x0 + v0 * CppAD::cos(psi0) * dt);
 			fg[1 + y_start + t] = y1 - (y0 + v0 * CppAD::sin(psi0) * dt);
-			//fg[1 + psi_start + t] = psi1 - (psi0 + v0 * delta0 / Lf * dt);
-			fg[1 + psi_start + t] = psi1 - (psi0 + v0 * delta0 / Lf * dt);
+
+			fg[1 + psi_start + t] = psi1 - (psi0 - v0 * delta0 / Lf * dt);
 			fg[1 + v_start + t] = v1 - (v0 + a0 * dt);
 			fg[1 + cte_start + t] = cte1
 					- ((f0 - y0) + (v0 * CppAD::sin(epsi0) * dt));
 			fg[1 + epsi_start + t] = epsi1
-					// - ((psi0 - psides0) - v0 * delta0 / Lf * dt); /
-					- ((psi0 - psides0) + v0 * delta0 / Lf * dt);
+					- ((psi0 - psides0) - v0 * delta0 / Lf * dt);      //+
 		}
-	}\
+	}
 
 };
 
@@ -135,17 +134,35 @@ MPC::MPC() {
 }
 MPC::~MPC() {
 }
+//
+//void MPC::CalcLatency(Eigen::VectorXd state)
+//{
+//
+//	//predict next state to avoid Latency problems
+//	//Latency of .1 seconds
+//	double dt = 0.1;
+//	const double Lf = 2.67;
+//	double x1=0, y1=0, psi1=0, v1=v, cte1=cte, epsi1=epsi;
+//	x1 += v * cos(0) * dt;
+//	y1 += v * sin(0) * dt;
+//	//steer_value is negative
+//	psi1 += - v/Lf * steer_value * dt;
+//	v1 += throttle_value * dt;
+//	cte1 += v * sin(epsi1) * dt;
+//	//steer_value is negative
+//	epsi1 += - v * steer_value / Lf * dt;
+//	Eigen::VectorXd state(6);
+//	state << x1,y1,psi1,v1,cte1,epsi1;
+//
+//}
 
 vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
 	bool ok = true;
-	//size_t i;
 	typedef CPPAD_TESTVECTOR(double) Dvector;
 	//State and Actuator variables
 	int n_state = 6;
 	int n_actuator = 2;
-	int latency = 1;
 	size_t n_vars = n_state * N + n_actuator * (N - 1);
-	// TODO: Set the number of constraints
 	size_t n_constraints = N * 6;
 
 	double x = state[0];
@@ -154,8 +171,6 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
 	double v = state[3];
 	double cte = state[4];
 	double epsi = state[5];
-	double steering_angle = state[6];
-	double throttle = state[7];
 
 	// Initial value of the independent variables.
 	// SHOULD BE 0 besides initial state.
@@ -173,27 +188,17 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
 
 	Dvector vars_lowerbound(n_vars);
 	Dvector vars_upperbound(n_vars);
-	// TODO: Set lower and upper limits for variables.
 
 	for (auto i = 0UL; i < delta_start; i++) {
 		vars_lowerbound[i] = -1.0e19;
 		vars_upperbound[i] = 1.0e19;
 	}
-	//Bound the upper and lower bounds to current steering angle for the length of our latency.
-	for (auto i = delta_start; i < delta_start + latency; i++) {
-		vars_lowerbound[i] = steering_angle;
-		vars_upperbound[i] = steering_angle;
+
+	for (auto i = delta_start/* + latency*/; i < a_start; i++) {
+		vars_lowerbound[i] = -0.436332 * Lf;
+		vars_upperbound[i] = 0.436332 * Lf;
 	}
-	for (auto i = delta_start + latency; i < a_start; i++) {
-		vars_lowerbound[i] = -0.4363;
-		vars_upperbound[i] = 0.4363;
-	}
-	//Bound the upper and lower bounds to current throttle for the length of our latency.
-	for (auto i = a_start; i < a_start + latency; i++) {
-		vars_lowerbound[i] = throttle;
-		vars_upperbound[i] = throttle;
-	}
-	for (auto i = a_start + latency; i < n_vars; i++) {
+	for (auto i = a_start/* + latency*/; i < n_vars; i++) {
 		vars_lowerbound[i] = -1.0;
 		vars_upperbound[i] = 1.0;
 	}
@@ -259,9 +264,10 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
 
 
 	vector<double> results;
-	results.push_back(solution.x[delta_start + latency]);  // skip the 'latency' frame
-	results.push_back(solution.x[a_start + latency]);
-	for (auto i = 1UL; i < N; i++) {
+	results.push_back(solution.x[delta_start]);
+	results.push_back(solution.x[a_start]);
+
+	for (auto i = 0UL; i < N - 1; i++) {
 		results.push_back(solution.x[x_start + i]);
 		results.push_back(solution.x[y_start + i]);
 	}
